@@ -1,7 +1,7 @@
 /*
   Solid State Systems
   LED Timer
-  David Nguyen
+  Aaron Nguyen
   5/4/2023 
   Summary: Solid State Systems program using the LilyGo TFT 3 to making a custom ammeter/timer for client. Uses ADC and reads differential
   voltage across shunt to detect the amperage. Uses software peak detector to obtain correct voltage.
@@ -328,6 +328,10 @@ float peak_detector(CircularBuffer<float, SMOOTHING_WINDOW_SIZE> *Buffer, int fr
 void setup() {
   // pinMode(15, OUTPUT);        // to boot with battery...
   // digitalWrite(15, 1);        // and/or power from 5v rail instead of USB
+  Serial.begin(250000);
+  delay(500);
+  Serial.println("Testing");
+  delay(500);
   pinMode(1, INPUT_PULLUP);   //D5 multiplexer input
   pinMode(2, INPUT_PULLUP);   //D6 multiplexer input
   pinMode(3, INPUT_PULLUP);   //D9 multiplexer input
@@ -349,7 +353,6 @@ void setup() {
       ;
   }
   ads.setGain(GAIN_TWO);  // 2x gain   +/- 2.048V  1 bit = 1mV | // 4x gain   +/- 1.024V  1 bit = 0.5mV
-  Serial.begin(250000);
   // reconfigure();
   // Set up the GPIO pin for the external interrupt
   reconfigure();
