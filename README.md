@@ -19,4 +19,5 @@ ESP32 Feather Board paired with a Featherwing 7-Segment Display to display the a
   socket headers for easy installation into varied machines.
 
 ### Version C (LCD Display + Hardware Filter)
-  Components: LilyGo T Display S3, external ADC, capacitors, resistors, socket connectors, pin head connectors, 5V power adapter, op amps, potentiometers.
+ - Components: LilyGo T Display S3, external ADC, capacitors, resistors, socket connectors, pin head connectors, 5V power adapter, op amps, potentiometers.
+ - Description: Communication with LCD using SPI, Communication with external ADC using I2C. ESP32 simulatenously displays the amount of amps passing through a material and the amount of time the amps passed through for. Decoupling Capacitors and pull down resistors used for signal integrety. Pin headers and socket headers for easy installation into varied machines. Integrated legacy hardware filter used to help clean up severely disorted signals.
