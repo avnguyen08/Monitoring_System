@@ -1,0 +1,14 @@
+"Source:","C:\Users\aaron\OneDrive\Desktop\repos\Work_SSS\Version_B\Top_Board\Top_Board.kicad_sch"
+"Date:","12/5/2023 12:34:16 PM"
+"Tool:","Eeschema (7.0.0)"
+"Generator:","D:\MyPrograms\7.0\bin\scripting\plugins/bom_csv_grouped_by_value.py"
+"Component Count:","12"
+
+"Collated Components:"
+
+"Item","Qty","Reference(s)","Value","LibPart","Footprint","Datasheet","DNP"
+"1","2","J1, J4","90_Deg_Conn","Connector_Generic:Conn_02x03_Odd_Even","Connector_PinHeader_2.54mm:PinHeader_2x03_P2.54mm_Horizontal","~","",""
+"2","1","J2","ADS1015","Connector:Conn_01x10_Socket","Voltage_Sensor_Timer:PinSocket_1x10_P2.54mm_Vertical_1","~","",""
+"3","4","R1, R4, R5, R7","3.9M","Device:R","Resistor_SMD:R_0805_2012Metric","~","",""
+"4","4","R2, R3, R6, R8","3.9M","Device:R","Resistor_THT:R_Axial_DIN0411_L9.9mm_D3.6mm_P12.70mm_Horizontal","~","",""
+"5","1","U1","T-Display-S3","Voltage_Sensor_Timer:T-Display-S3","Voltage_Sensor_Timer:T-Display-S3","","",""
