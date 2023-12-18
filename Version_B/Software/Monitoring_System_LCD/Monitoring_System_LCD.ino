@@ -1,33 +1,23 @@
 /*
-  Solid State Systems
-  LED Timer
-  Aaron Nguyen
-  5/4/2023 
-  Summary: Solid State Systems program using the LilyGo TFT 3 to making a custom ammeter/timer for client. Uses ADC and reads differential
-  voltage across shunt to detect the amperage. Uses software peak detector to obtain correct voltage.
-  DIP Switch Configuration
-  "D5: Off, D6: Off" for 1000/25 shunt
-  "D5: Off, D6: On" for 1000/50 shunt
-  "D5: On, D6: Off" for 1000/100 shunt
-  "D5: On, D6: On" for 1000/100 shunt
-  3.9 MOhm pull-down resistor between ground and all four ADS1x15 Pins (A0,A1,A2,A3). 
-  Parts: Adafruit Feather ESP32-S3, ADS1015 ADC [Mouser No: 485-1083, Manufactoror: Adafruit] - A0 Pin (Positive Lead) & A1 Pin (Negative Lead), 4x 7-Segment LED RED HT16K33 FeatherWing (Address used 0x70), 2x Potentiometer, 4x 3.9 Ohms Resistor.
-  Displays use I2C to communicate. SDA and SCL pins used to
-  interface. There are multiple selectable I2C addresses. For backpacks
-  with 2 Address Select pins: 0x70, 0x71, 0x72 or 0x73. For backpacks
-  with 3 Address Select pins: 0x70 thru 0x77
-  Button Displays seconds when pressed
-  Window Filter used. Dropping negative reads and the last 4 values outputted due to debouncing when removing the positive lead.
+* Company: Solid State Systems
+* Author: Aaron Nguyen
+* Project: Monitoring System Version C (LCD)
 
-  4/12/2023 Update: Updated code to include different input threshhold configurations. There are 4 different modes that can be changed by changing pins D6 and D9 on the feather board. 0b00 means 2, 0b01 means 40, 0b10 means 80, 0b11 means 200.
-  Error  with different power methods. Only method to produce successful results is through the usb ports on the main computer. Tried laptop, powerbank, and powersupply, all failed. Suspected to be a grounding issue.
-  4/17/2023 Update: Replaced ADS1015, increased code filtering, and connected ground to earth ground. These seemed to solve the problem.   
-  4/24/2023 Update: Added potentiometer to adjust time, added leds to indicate which one is displaying, added pin d5 jumper pins to do absolute or regular sensor readings, 
-  4/29/2023 Update: Took out abs or regular sensor reading options, default to absolute value. debug lines used to represent serial.print() so i can turn on and off all serial.prints used for debugging
-  5/29/2023 Update: Changed the code so that it detects the peak of the voltage and also increase sampling rate. It is now theoretically able to detect ac waves and dc wave peak voltage.
-  6/25/2023 Update: ADS 1115 gets around 1450 samples per second in the code while loop. This means for .18 seconds, there will be 261 samples. for 1 seconds, there will be 1450 samples
-  6/26/2023 Update: adding time correcting function: corrects time if while loop isn't exited as fast as it should be.  changed display to display 4 different config types for debugging. plotted test machine output and made formula
-  to predict next amp values since theirs is not linear
+* Summary: Solid State Systems program using the LilyGo T-Display s3 to making a custom ammeter/timer for client. Uses ADC and reads differential
+* voltage across shunt to detect the amperage. Uses software peak detector to obtain correct voltage.
+
+* DIP Switch Configuration
+* "D5: Off, D6: Off" for 1000/25 shunt
+* "D5: Off, D6: On" for 1000/50 shunt
+* "D5: On, D6: Off" for 1000/100 shunt
+* "D5: On, D6: On" for 1000/100 shunt
+* 
+* Displays use I2C to communicate. SDA and SCL pins used to interface. 
+* Dropping negative reads and the last 4 values outputted due to debouncing when removing the positive lead.
+*
+* 6/25/2023 Update: ADS 1115 gets around 1450 samples per second in the code while loop. This means for .18 seconds, there will be 261 samples. for 1 seconds, there will be 1450 samples
+* 6/26/2023 Update: adding time correcting function: corrects time if while loop isn't exited as fast as it should be.  changed display to display 4 different config types for debugging. plotted test machine output and made formula
+* to predict next amp values since theirs is not linear
 */
 #include <Adafruit_ADS1X15.h>
 #include <CircularBuffer.h>
