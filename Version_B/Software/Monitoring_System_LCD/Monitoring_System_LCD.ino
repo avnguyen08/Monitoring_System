@@ -103,12 +103,12 @@ CircularBuffer<float, SMOOTHING_WINDOW_SIZE> *windowBufferptr = &windowBuffer;
 //VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 //---------------------------------DEBUG variables -----------------------------
 int sensorCount = 0;
-const int front_trunc = 0;     // amount of samples truncated at the beginning part of the array storing sensor values.
-const int back_trunc = 0;      // amount of samples truncated at the end part of the array storing sensor values.
+const int front_trunc = 0;       // amount of samples truncated at the beginning part of the array storing sensor values.
+const int back_trunc = 0;        // amount of samples truncated at the end part of the array storing sensor values.
 const int back_sort_trunc = 20;  // amount of samples truncated at the end part of the sorted array
-int sens = 5;                   // input sensitivity
+int sens = 5;                    // input sensitivity
 int exit_sens = 2;
-float latency = 0.0;            //0 ms latency (customizable)
+float latency = 0.0;  //0 ms latency (customizable)
 float counting_rate = 0;
 char *charptr;
 //Function used in the qsort function argument. Customize it based on what the size of the data type and if you want ascending sort or descending sort. (float and ascending sort is used here)
@@ -236,7 +236,7 @@ void debug_display() {
 //function to convert mV to amps
 float mVtoAmp(float x) {
   float amp_convert = 0;
-  amp_convert = -0.000653 + 0.00324*x + 0.00000841*x*x;  //2nd polynomial formula
+  amp_convert = -0.000653 + 0.00324 * x + 0.00000841 * x * x;  //2nd polynomial formula
   return amp_convert * 1000;
 }
 
@@ -248,7 +248,7 @@ float correct_time(CircularBuffer<float, SMOOTHING_WINDOW_SIZE> *arr, float peak
   int iterate_count = 0;
   for (int i = ((*arr).size() - 1); i > 1; --i) {
     //if value is greater than 90% of peak value, break out of for loop
-    if ((*arr)[i] > (.9*peak_value)) {
+    if ((*arr)[i] > (.9 * peak_value)) {
       break;
     }
     iterate_count++;
@@ -272,10 +272,10 @@ void IRAM_ATTR CONFIG_INTERRUPT() {
 }
 //read the dip switches and change the multiplier of the voltage to amps based on the dip switch readings
 void reconfigure() {
-  mtp[0] = digitalRead(1);
-  mtp[1] = digitalRead(2);
-  mtp[2] = digitalRead(3);
-  mtp[3] = digitalRead(10);
+  mtp[0] = digitalRead(10);
+  mtp[1] = digitalRead(18);
+  mtp[2] = digitalRead(44);
+  mtp[3] = digitalRead(43);
   if (mtp[0] == 1 && mtp[1] == 1) { amp = 4; }  //D5 Off, D6 Off
   else if (mtp[0] == 1 && mtp[1] == 0) {
     amp = 20;
@@ -316,21 +316,21 @@ float peak_detector(CircularBuffer<float, SMOOTHING_WINDOW_SIZE> *Buffer, int fr
 //-------------------VOID SETUP-------------------------
 //=========================================v==========================================
 void setup() {
-  // pinMode(15, OUTPUT);        // to boot with battery...
-  // digitalWrite(15, 1);        // and/or power from 5v rail instead of USB
+  pinMode(15, OUTPUT);  // to boot with battery...
+  digitalWrite(15, 1);  // and/or power from 5v rail instead of USB
   Serial.begin(250000);
   delay(500);
   Serial.println("Testing");
   delay(500);
-  pinMode(1, INPUT_PULLUP);   //D5 multiplexer input
-  pinMode(2, INPUT_PULLUP);   //D6 multiplexer input
-  pinMode(3, INPUT_PULLUP);   //D9 multiplexer input
-  pinMode(10, INPUT_PULLUP);  //D10 multiplexer input
+  pinMode(10, INPUT_PULLUP);  //D5 multiplexer input
+  pinMode(18, INPUT_PULLUP);  //D6 multiplexer input
+  pinMode(44, INPUT_PULLUP);  //D9 multiplexer input
+  pinMode(43, INPUT_PULLUP);  //D10 multiplexer input
   tft.begin();
-  Wire.begin(I2C_SDA, I2C_SCL);
-  tft.setRotation(1);
+  tft.setRotation(3);
   tft.fillScreen(TFT_BLACK);  // Clear screen
   tft.setTextColor(TFT_WHITE);
+  Wire.begin(I2C_SDA, I2C_SCL);
   for (int i = 0; i < SENS_SIZE; ++i) {
     sensBuffer.push(0);
   }
@@ -429,7 +429,7 @@ void loop() {
     } else {
       amp_display(AMPFONT70);
     }
-  
+
     time_display(TIMEFONT);
     peak_display(TIMEFONT);
 
