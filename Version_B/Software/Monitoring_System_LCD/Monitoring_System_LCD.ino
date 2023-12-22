@@ -52,12 +52,12 @@ empty for other platforms. Be careful - other platforms may have
 TFT_eSPI tft = TFT_eSPI();  // Use hardware SPI
 
 //coordinates for various TFT display features (T-Display S3 is 170x320 pixels)
-float ampX = 160;   // display x axist pixel coordinate
-float ampY = 10;    // display x axist pixel coordinate
+float ampX = 160;   // display x axis pixel coordinate
+float ampY = 10;    // display x axis pixel coordinate
 float timeX = 320;  // display x axis pixel coordinate
 float timeY = 170;  // display y axis pixel coordinate
-float peakX = 0;    // display x axis pixel coordinate
-float peakY = 170;  // display y axis pixel coordinate
+float voltX = 0;    // display x axis pixel coordinate
+float voltY = 170;  // display y axis pixel coordinate
 
 //Variables needed for Solid State Systems compoany Logo LCD display
 PNG png;           // PNG decoder instance
@@ -83,15 +83,15 @@ private:
   uint sample_count = 0;
   float waveform_time = 0.11;  // The waveform's true length of time in seconds
   float displayTime = 0.11;    // Display time variable in seconds
-  int enter_sens = 5;          // input sensitivity
+  int enter_sens = 3;          // input sensitivity
   int exit_sens = 2;
   float latency = 0.0;  //0 ms latency (customizable)
   float counting_rate = 0;
   float ampPeak = 0.00;
   float voltPeak = 0;
-  const int front_trunc = 0;       // amount of samples truncated at the beginning part of the array storing sensor values.
+  const int front_trunc = 20;       // amount of samples truncated at the beginning part of the array storing sensor values.
   const int back_trunc = 40;        // amount of samples truncated at the end part of the array storing sensor values.
-  const int back_sort_trunc = 0;  // amount of samples truncated at the end part of the sorted array
+  const int back_sort_trunc = 3;  // amount of samples truncated at the end part of the sorted array
 public:
 
   bool complete_flag;          // flag that says waveform has been captured
@@ -288,6 +288,7 @@ void doTask1(void *parameters) {
     if (wave.complete_flag == 1) {
       tft.fillScreen(TFT_BLACK);  // Clear screen
 
+
       // if amp display more than 4 digits then change font size to smaller size
       if (wave.amp_peak() > 9999) {
         amp_display(AMPFONT);  // displays amp in top center of LCD
@@ -341,7 +342,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(18), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(44), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(43), CONFIG_INTERRUPT, CHANGE);
-  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true); // puts ADC into continous mode
+  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true); // puts ADC into continous mode
   delay(500);
   Serial.println("ADC Range: +/- 1.024V  1 bit = 0.5mV");
   ads.begin();
@@ -434,7 +435,7 @@ void time_display(const GFXfont *font) {
   sprintf(string, "%.2f%s", wave.timerDisplay(), "s");  // stores corrected time value into string to be printed to LCD
 
   //Check that corrected time is above 0 seconds. If time negative then print N/A instead
-  if (wave.correct_time() > 0) {
+  if (wave.timerDisplay() > 0) {
     tft.drawString(string, timeX, timeY);  // prints string to LCD screen
   } else {
     tft.drawString("N/A", timeX, timeY);  // prints string to LCD screen
@@ -448,7 +449,13 @@ void volt_display(const GFXfont *font) {
   tft.setFreeFont(font);                                  // Select the font
   tft.setTextDatum(BL_DATUM);                             // Adjusts reference point of text generation to bottom left
   sprintf(string, "%.0f%s", wave.volt_peak(), "mv");  // stores voltage peak into string to be printed to LCD
-  tft.drawString(string, peakX, peakY);                   // prints string to LCD screen
+  if (wave.volt_peak() > 0){
+  tft.drawString(string, voltX, voltY);                   // prints string to LCD screen
+  }
+  else {
+    tft.drawString("N/A", voltX, voltY);  // prints string to LCD screen
+    
+  }
 }
 
 
