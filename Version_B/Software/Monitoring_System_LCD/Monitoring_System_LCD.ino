@@ -342,7 +342,8 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(18), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(44), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(43), CONFIG_INTERRUPT, CHANGE);
-  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true); // puts ADC into continous mode
+  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true); // puts ADC into continous mode hardware filter
+  // ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true); // puts ADC into continous mode no filter
   delay(500);
   Serial.println("ADC Range: +/- 1.024V  1 bit = 0.5mV");
   ads.begin();
@@ -361,7 +362,7 @@ void setup() {
   tft.setTextColor(TFT_RED);
   tft.setFreeFont(&FreeMonoBold12pt7b);  // Select the font
   tft.setTextDatum(BR_DATUM);            //Adjusts reference point of text generation
-  tft.drawString("C1.100", 320, 170);    // Print the test text in the custom font
+  tft.drawString("C1.101", 320, 170);    // Print the version number in the bottom right
   delay(2000);
   bin_sem = xSemaphoreCreateBinary();
 
