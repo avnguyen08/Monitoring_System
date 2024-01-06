@@ -89,9 +89,9 @@ private:
   float counting_rate = 0;
   float ampPeak = 0.00;
   float voltPeak = 0;
-  const int front_trunc = 20;       // amount of samples truncated at the beginning part of the array storing sensor values.
-  const int back_trunc = 40;        // amount of samples truncated at the end part of the array storing sensor values.
-  const int back_sort_trunc = 3;  // amount of samples truncated at the end part of the sorted array
+  const float front_trunc = 0.007;       // .7% amount of samples truncated at the beginning part of the array storing sensor values.
+  const float back_trunc = 0.013;        // 1.3% amount of samples truncated at the end part of the array storing sensor values.
+  const float back_sort_trunc = .001;  // amount of samples truncated at the end part of the sorted array
 public:
 
   bool complete_flag;          // flag that says waveform has been captured
@@ -133,6 +133,7 @@ public:
             break;
           }
     }
+    displayTime = ((endTime - startTime) / 1000) + latency;
     samps_per_sec();
     complete_flag = 1;
   }
@@ -166,7 +167,6 @@ public:
   }
   //returns display time
   float timerDisplay() {
-    displayTime = ((endTime - startTime) / 1000) + latency;
     return displayTime;
   }
   //Prints values inside window buffer
@@ -198,15 +198,19 @@ public:
 
   //Takes in circular buffer of graph points and returns the peak of the buffer
   float volt_peak() {
-    CircularBuffer<float, WAVEFORM_MAX_SIZE> newBuffer;
-    CircularBuffer<float, WAVEFORM_MAX_SIZE> *newBufferptr = &newBuffer;
-    for (int i = front_trunc; i < ((Waveform.size()) - back_trunc); ++i) {
-      newBuffer.push(Waveform[i]);
+    int wave_size = Waveform.size(); //size of waveform
+    int wave_start = front_trunc*wave_size;    //Cuts the front of waveform by starting the analysis at a later start
+    int wave_end = back_trunc*wave_size;        //Cuts the back of waveform by ending for loop early
+    int wave_sort_end = back_sort_trunc*wave_size;
+    CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
+    CircularBuffer<float, WAVEFORM_MAX_SIZE> *Sorted_Waveformptr = &Sorted_Waveform;
+    for (int i = wave_start; i < (wave_size - wave_end); ++i) {
+      Sorted_Waveform.push(Waveform[i]);
     }
 
-    qsort(newBufferptr, (*newBufferptr).size(), sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
-    voltPeak = newBuffer[newBuffer.size() - 2 - back_sort_trunc];      // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
-    (*newBufferptr).clear();
+    qsort(Sorted_Waveformptr, (*Sorted_Waveformptr).size(), sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
+    voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];      // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
+    Sorted_Waveform.clear();
     debug("max: ");
     debugln(voltPeak);
     return voltPeak;
