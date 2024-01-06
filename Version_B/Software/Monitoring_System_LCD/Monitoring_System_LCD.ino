@@ -33,6 +33,7 @@ empty for other platforms. Be careful - other platforms may have
 #define IRAM_ATTR
 #endif
 
+// #define HARDWARE_FILTER 0     // 0 for no hardware filter |  1 if hardware filter
 #define I2C_SDA 12           // I2C Data pin for ADC
 #define I2C_SCL 13           // I2C Clock pin for ADC
 #define MAX_IMAGE_WDITH 320  // Solid State Systems logo pixel width
@@ -205,6 +206,14 @@ public:
     }
 
     qsort(newBufferptr, (*newBufferptr).size(), sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
+    //edge case where not enough samples were collected, avoids the error of accessing a negative range
+    if((newBuffer.size() - back_sort_trunc - 2 ) < 0) {
+      voltPeak = -0.115;
+    (*newBufferptr).clear();
+    debug("max: ");
+    debugln(voltPeak);
+      return voltPeak;
+    }
     voltPeak = newBuffer[newBuffer.size() - 2 - back_sort_trunc];      // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
     (*newBufferptr).clear();
     debug("max: ");
@@ -272,9 +281,22 @@ static SemaphoreHandle_t bin_sem;
 
 // Task in Core 0
 void doTask0(void *parameters) {
+
+  //grab control of wave1
+  //release control of wave2 to lcd
   while (1) {
     if (wave.waveform_exist()) {
       wave.waveform_capture();
+      break;
+    }
+  }
+
+  //grab control of wave2
+  //release control of wave2
+  while(1) {
+    if (wave2.waveform_exist()) {
+      wave2.waveform_capture();
+      break;
     }
   }
 }
@@ -285,6 +307,7 @@ void doTask1(void *parameters) {
   // Do forever
   while (1) {
     vTaskDelay(500 / portTICK_PERIOD_MS);
+    //if no wave free, display current value
     if (wave.complete_flag == 1) {
       tft.fillScreen(TFT_BLACK);  // Clear screen
 
@@ -342,8 +365,14 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(18), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(44), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(43), CONFIG_INTERRUPT, CHANGE);
+
+//If hardware filter is defined then read from hardware filter, if not then read from other pins
+  #if HARDWARE_FILTER
   ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true); // puts ADC into continous mode hardware filter
-  // ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true); // puts ADC into continous mode no filter
+  #else
+  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true); // puts ADC into continous mode no filter
+  #endif
+  
   delay(500);
   Serial.println("ADC Range: +/- 1.024V  1 bit = 0.5mV");
   ads.begin();
@@ -439,22 +468,30 @@ void time_display(const GFXfont *font) {
   if (wave.timerDisplay() > 0) {
     tft.drawString(string, timeX, timeY);  // prints string to LCD screen
   } else {
-    tft.drawString("N/A", timeX, timeY);  // prints string to LCD screen
+    tft.drawString(string, timeX, timeY);  // prints string to LCD screen
+    // tft.drawString("N/A", timeX, timeY);  // prints string to LCD screen
   }
 }
 
 // Function that displays the voltage in bottom left corner of LCD
 void volt_display(const GFXfont *font) {
-
+  float v_peak = 0;
   tft.setTextColor(TFT_WHITE);                            // Sets color of text to white
   tft.setFreeFont(font);                                  // Select the font
   tft.setTextDatum(BL_DATUM);                             // Adjusts reference point of text generation to bottom left
-  sprintf(string, "%.0f%s", wave.volt_peak(), "mv");  // stores voltage peak into string to be printed to LCD
-  if (wave.volt_peak() > 0){
+  v_peak = wave.volt_peak();
+  sprintf(string, "%.0f%s", v_peak, "mv");  // stores voltage peak into string to be printed to LCD
+  if (v_peak > 0){
   tft.drawString(string, voltX, voltY);                   // prints string to LCD screen
   }
+  //low amount of samples error
+  else if (v_peak == -0.115) {
+  tft.drawString("N/A:Low Samp", voltX, voltY);                   // prints string to LCD screen
+
+  }
   else {
-    tft.drawString("N/A", voltX, voltY);  // prints string to LCD screen
+    // tft.drawString("N/A", voltX, voltY);  // prints string to LCD screen
+  tft.drawString(string, voltX, voltY);                   // prints string to LCD screen
     
   }
 }
