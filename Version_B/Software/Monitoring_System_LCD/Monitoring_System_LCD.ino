@@ -33,6 +33,7 @@ empty for other platforms. Be careful - other platforms may have
 #define IRAM_ATTR
 #endif
 
+// #define HARDWARE_FILTER 0     // 0 for no hardware filter |  1 if hardware filter
 #define I2C_SDA 12           // I2C Data pin for ADC
 #define I2C_SCL 13           // I2C Clock pin for ADC
 #define MAX_IMAGE_WDITH 320  // Solid State Systems logo pixel width
@@ -48,6 +49,7 @@ empty for other platforms. Be careful - other platforms may have
 #define debug(x)
 #define debugln(x)
 #endif
+
 
 TFT_eSPI tft = TFT_eSPI();  // Use hardware SPI
 
@@ -65,7 +67,8 @@ int16_t xpos = 0;  // x-coordinate of logo
 int16_t ypos = 0;  // y-coordinate of logo
 
 Adafruit_ADS1015 ads;
-char string[50];                     //string to hold display data, non-essential but useful for debugging and logging
+char task0_string[50];                     //string to hold display data, non-essential but useful for debugging and logging
+char task1_string[50];                     //string to hold display data, non-essential but useful for debugging and logging
 const int WAVEFORM_MAX_SIZE = 2890;  // amount of samples stored. Number chosen for 1 seconds worth of samples. Sampling rate: 1450 samples/sec
 const int SENS_SIZE = 10;            //size of array that checks for consistent voltage above threshold sensitivity
 
@@ -89,8 +92,8 @@ private:
   float counting_rate = 0;
   float ampPeak = 0.00;
   float voltPeak = 0;
-  const float front_trunc = 0.007;       // .7% amount of samples truncated at the beginning part of the array storing sensor values.
-  const float back_trunc = 0.013;        // 1.3% amount of samples truncated at the end part of the array storing sensor values.
+  const float front_trunc = 0.03;       // .7% amount of samples truncated at the beginning part of the array storing sensor values.
+  const float back_trunc = 0.06;        // 1.3% amount of samples truncated at the end part of the array storing sensor values.
   const float back_sort_trunc = .001;  // amount of samples truncated at the end part of the sorted array
 public:
 
@@ -169,14 +172,13 @@ public:
   float timerDisplay() {
     return displayTime;
   }
-  //Prints values inside window buffer
+  //Prints values inside wwaveform
   void print_wave_form() {
     for (int i = 0; i < Waveform.size(); ++i) {
-      sprintf(string, "Array Value[%d] = %.0f", i, Waveform[i]);
-      Serial.println(string);
+      sprintf(task0_string, "Array Value[%d] = %.0f", i, Waveform[i]);
+      Serial.println(task0_string);
     }
   }
-
 
 
   /* Corrects display time from being too long due to while loop not exiting correctly
@@ -208,8 +210,12 @@ public:
       Sorted_Waveform.push(Waveform[i]);
     }
 
-    qsort(Sorted_Waveformptr, (*Sorted_Waveformptr).size(), sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
+    qsort(&Sorted_Waveform, Sorted_Waveform.size() +1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
     voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];      // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
+    for (int i = 0; i < Sorted_Waveform.size(); ++i) {
+      sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
+      Serial.println(task0_string);
+    }
     Sorted_Waveform.clear();
     debug("max: ");
     debugln(voltPeak);
@@ -346,12 +352,18 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(18), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(44), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(43), CONFIG_INTERRUPT, CHANGE);
+
+//If hardware filter is defined then read from hardware filter, if not then read from other pins
+  #if HARDWARE_FILTER
   ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true); // puts ADC into continous mode hardware filter
-  // ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true); // puts ADC into continous mode no filter
+  #else
+  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true); // puts ADC into continous mode no filter
+  #endif
+
   delay(500);
   Serial.println("ADC Range: +/- 1.024V  1 bit = 0.5mV");
   ads.begin();
-  Serial.println("1.102");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
+  Serial.println("C1.102");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
 
   tft.setTextDatum(MC_DATUM);
   int16_t rc = png.openFLASH((uint8_t *)Artboard_1, sizeof(Artboard_1), pngDraw);
@@ -427,8 +439,8 @@ void amp_display(const GFXfont *font) {
   tft.setTextColor(TFT_RED);              //Sets color of text to red
   tft.setFreeFont(font);                  // Selects the font
   tft.setTextDatum(TC_DATUM);             // Adjusts reference point of text generation to top center
-  sprintf(string, "%.0f", wave.amp_peak());  // stores peak amp value into string to be printed to LCD
-  tft.drawString(string, ampX, ampY);     // Print the test text in the custom font
+  sprintf(task1_string, "%.0f", wave.amp_peak());  // stores peak amp value into string to be printed to LCD
+  tft.drawString(task1_string, ampX, ampY);     // Print the test text in the custom font
 }
 
 // Function that displays time in bottom right corner of LCD
@@ -437,11 +449,11 @@ void time_display(const GFXfont *font) {
   tft.setTextColor(TFT_WHITE);                          // Sets color of text to white
   tft.setFreeFont(font);                                // Selects the font
   tft.setTextDatum(BR_DATUM);                           //Adjusts reference point of text generation to bottom right
-  sprintf(string, "%.2f%s", wave.timerDisplay(), "s");  // stores corrected time value into string to be printed to LCD
+  sprintf(task1_string, "%.2f%s", wave.timerDisplay(), "s");  // stores corrected time value into string to be printed to LCD
 
   //Check that corrected time is above 0 seconds. If time negative then print N/A instead
   if (wave.timerDisplay() > 0) {
-    tft.drawString(string, timeX, timeY);  // prints string to LCD screen
+    tft.drawString(task1_string, timeX, timeY);  // prints string to LCD screen
   } else {
     tft.drawString("N/A", timeX, timeY);  // prints string to LCD screen
   }
@@ -449,13 +461,13 @@ void time_display(const GFXfont *font) {
 
 // Function that displays the voltage in bottom left corner of LCD
 void volt_display(const GFXfont *font) {
-
+  float volt_peak = wave.volt_peak();
   tft.setTextColor(TFT_WHITE);                            // Sets color of text to white
   tft.setFreeFont(font);                                  // Select the font
   tft.setTextDatum(BL_DATUM);                             // Adjusts reference point of text generation to bottom left
-  sprintf(string, "%.0f%s", wave.volt_peak(), "mv");  // stores voltage peak into string to be printed to LCD
-  if (wave.volt_peak() > 0){
-  tft.drawString(string, voltX, voltY);                   // prints string to LCD screen
+  sprintf(task1_string, "%.0f%s", volt_peak, "mv");  // stores voltage peak into string to be printed to LCD
+  if (volt_peak > 0){
+  tft.drawString(task1_string, voltX, voltY);                   // prints string to LCD screen
   }
   else {
     tft.drawString("N/A", voltX, voltY);  // prints string to LCD screen
