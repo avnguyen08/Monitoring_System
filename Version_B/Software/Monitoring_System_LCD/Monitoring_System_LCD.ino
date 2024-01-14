@@ -33,7 +33,7 @@ empty for other platforms. Be careful - other platforms may have
 #define IRAM_ATTR
 #endif
 
-// #define HARDWARE_FILTER 0     // 0 for no hardware filter |  1 if hardware filter
+#define HARDWARE_FILTER 0    // 0 for no hardware filter |  1 if hardware filter
 #define I2C_SDA 12           // I2C Data pin for ADC
 #define I2C_SCL 13           // I2C Clock pin for ADC
 #define MAX_IMAGE_WDITH 320  // Solid State Systems logo pixel width
@@ -67,8 +67,8 @@ int16_t xpos = 0;  // x-coordinate of logo
 int16_t ypos = 0;  // y-coordinate of logo
 
 Adafruit_ADS1015 ads;
-char task0_string[50];                     //string to hold display data, non-essential but useful for debugging and logging
-char task1_string[50];                     //string to hold display data, non-essential but useful for debugging and logging
+char task0_string[50];               //string to hold display data, non-essential but useful for debugging and logging
+char task1_string[50];               //string to hold display data, non-essential but useful for debugging and logging
 const int WAVEFORM_MAX_SIZE = 2890;  // amount of samples stored. Number chosen for 1 seconds worth of samples. Sampling rate: 1450 samples/sec
 const int SENS_SIZE = 10;            //size of array that checks for consistent voltage above threshold sensitivity
 
@@ -79,31 +79,31 @@ int comp(const void *elem1, const void *elem2);
 class SignalInfo {
 
 private:
-  int shunt = 0;        // indicates what shunt is being used
-  float sensorVal = 0;  // sensorVal
-  float startTime = 0;
-  float endTime = 1;
-  uint sample_count = 0;
+  int shunt = 0;               // indicates what shunt is being used
+  float sensorVal = 0;         // sensorVal
+  float startTime = 0;         // marked start time of waveform
+  float endTime = 1;           // marked end time of waveform
+  uint sample_count = 0;       // holds the count of samples
   float waveform_time = 0.11;  // The waveform's true length of time in seconds
   float displayTime = 0.11;    // Display time variable in seconds
-  int enter_sens = 3;          // input sensitivity
+  int enter_sens = 2;          // input sensitivity
   int exit_sens = 2;
   float latency = 0.0;  //0 ms latency (customizable)
   float counting_rate = 0;
   float ampPeak = 0.00;
   float voltPeak = 0;
-  const float front_trunc = 0.03;       // .7% amount of samples truncated at the beginning part of the array storing sensor values.
-  const float back_trunc = 0.06;        // 1.3% amount of samples truncated at the end part of the array storing sensor values.
+  const float front_trunc = 0.03;      // .7% amount of samples truncated at the beginning part of the array storing sensor values.
+  const float back_trunc = 0.06;       // 1.3% amount of samples truncated at the end part of the array storing sensor values.
   const float back_sort_trunc = .001;  // amount of samples truncated at the end part of the sorted array
 public:
 
-  bool complete_flag;          // flag that says waveform has been captured
+  bool complete_flag;                                 // flag that says waveform has been captured
   CircularBuffer<float, SENS_SIZE> sensBuffer;        //Buffer that checks filters out rare bad readings from good readings
   CircularBuffer<float, WAVEFORM_MAX_SIZE> Waveform;  //Buffer that checks filters out rare bad readings from good readings
   CircularBuffer<float, WAVEFORM_MAX_SIZE> *Waveformptr = &Waveform;
 
 
- 
+
   //checks if valid waveform is exists (Essentially differentiates between a waveform or noise)
   bool waveform_exist() {
 
@@ -117,27 +117,42 @@ public:
     return true;  // True, waveform exists, significant voltage detected
   }
 
- //capture waveform
+  //capture waveform
   void waveform_capture() {
-    Waveform.clear();      // Clears buffer so it doesn't have left over values
+    Waveform.clear();  // Clears buffer so it doesn't have left over values
     sample_count = 0;
     startTime = millis();  //marks the beginning time of the waveform
-    while (1) {
+      // if newest ADC readings below a certain sensitivity then end capture
+    while (!(waveform_ended())) {
       sensorVal = (float)ads.getLastConversionResults();  // polling for sensor values to see when there is actually significant voltage (voltage above the threshold value)
       sample_count++;
       debug("SensorValue: ");
       debugln(sensorVal);
-          Waveform.push(sensorVal);
-          sensBuffer.push(sensorVal);
-          // if newest ADC readings below a certain sensitivity then end capture
-          if (waveform_ended()) {
-            endTime = millis();  //signals end of timer
-            waveform_time = ((endTime - startTime) / 1000);
-            break;
-          }
+      Waveform.push(sensorVal);
+      sensBuffer.push(sensorVal);
     }
-    displayTime = ((endTime - startTime) / 1000) + latency;
+    // If samples are really low then return and 
+    if (sample_count < 100) {
+        debugln("Low Samples");
+        return;
+    }
+    endTime = millis();  //signals end of timer
+    waveform_time = ((endTime - startTime) / 1000);
+    displayTime = waveform_time + latency;  //accounts for latency issues in tracking
+
+
+    set_volt_peak();    //sets the peak voltage of the waveform
+    set_amp_peak();     // sets the peak amp value of the waveform
+    print_wave_form();  //prints the waveform
     samps_per_sec();
+    debug("voltPeak: ");
+    debugln(voltPeak);
+    debug("Samples per second is: ");
+    debugln(counting_rate);
+    debug("The size is: ");
+    debugln(Waveform.size());
+    debug("The seconds is: ");
+    debugln(waveform_time);
     complete_flag = 1;
   }
 
@@ -149,9 +164,6 @@ public:
         return false;  // False, waveform has not ended
       }
     }
-    volt_peak();
-    amp_peak();
-    print_wave_form();
     return true;  // True, Waveform has ended
   }
   //sets the type of shunt being used
@@ -160,12 +172,6 @@ public:
   }
   float samps_per_sec() {
     counting_rate = sample_count / (waveform_time);
-    debug("The samples per second is: ");
-    debugln(counting_rate);
-    debug("The size is: ");
-    debugln(Waveform.size());
-    debug("The seconds is: ");
-    debugln(waveform_time);
     return counting_rate;
   }
   //returns display time
@@ -199,32 +205,31 @@ public:
   }
 
   //Takes in circular buffer of graph points and returns the peak of the buffer
-  float volt_peak() {
-    int wave_size = Waveform.size(); //size of waveform
-    int wave_start = front_trunc*wave_size;    //Cuts the front of waveform by starting the analysis at a later start
-    int wave_end = back_trunc*wave_size;        //Cuts the back of waveform by ending for loop early
-    int wave_sort_end = back_sort_trunc*wave_size;
+  float set_volt_peak() {
+    int wave_size = Waveform.size();  //size of waveform
+    //Variables deciding how much of the waveform to modify based on how long waveform is
+    int wave_start = front_trunc * wave_size;         //Cuts the front of waveform by changing the index the sort begins
+    int wave_end = back_trunc * wave_size;            //Cuts the back of waveform by ending for loop early
+    int wave_sort_end = back_sort_trunc * wave_size;  //Cuts any peak values from minor noise
+
     CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
-    CircularBuffer<float, WAVEFORM_MAX_SIZE> *Sorted_Waveformptr = &Sorted_Waveform;
     for (int i = wave_start; i < (wave_size - wave_end); ++i) {
       Sorted_Waveform.push(Waveform[i]);
     }
 
-    qsort(&Sorted_Waveform, Sorted_Waveform.size() +1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
-    voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];      // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
+    qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
+    voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];    // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
     for (int i = 0; i < Sorted_Waveform.size(); ++i) {
       sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
       Serial.println(task0_string);
     }
     Sorted_Waveform.clear();
-    debug("max: ");
-    debugln(voltPeak);
     return voltPeak;
   }
 
   /*returns the peak amps for the waveform depending on what shunt is attached 
   [Shunt 1: 1000/25 shunt] [Shunt 2: 1000/50 shunt] [Shunt 3: 1000/100 shunt] */
-  float amp_peak() {
+  float set_amp_peak() {
     switch (shunt) {
       case 1:
         ampPeak = 40 * volt_peak();
@@ -242,6 +247,14 @@ public:
         ampPeak = 40 * volt_peak();
         return ampPeak;
     }
+  } /*returns the peak amps for the waveform */
+  float amp_peak() {
+    return ampPeak;
+  }
+
+  /*returns the peak amps for the waveform */
+  float volt_peak() {
+    return voltPeak;
   }
   /* Function that converts peak mv to Amps using a formula made from excel plots of legacy build. 
     Old build had similar amp readings but not quite the same. used a formula to adjust for its error*/
@@ -323,9 +336,9 @@ void setup() {
   pinMode(15, OUTPUT);  // to boot with battery...
   digitalWrite(15, 1);  // and/or power from 5v rail instead of USB
   Serial.begin(250000);
-  delay(500);
+  vTaskDelay(500 / portTICK_PERIOD_MS);
   Serial.println("Testing");
-  delay(500);
+  vTaskDelay(500 / portTICK_PERIOD_MS);
   pinMode(10, INPUT_PULLUP);     //D10 multiplexer input
   pinMode(18, INPUT_PULLUP);     //D18 multiplexer input
   pinMode(44, INPUT_PULLUP);     //D44 multiplexer input
@@ -341,7 +354,7 @@ void setup() {
   if (!ads.begin()) {
     while (1) {
       Serial.println("Failed to initialize ADS.");
-      delay(3000);
+      vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
   }
   ads.setGain(GAIN_TWO);  // 2x gain   +/- 2.048V  1 bit = 1mV | // 4x gain   +/- 1.024V  1 bit = 0.5mV
@@ -353,14 +366,14 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(44), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(43), CONFIG_INTERRUPT, CHANGE);
 
-//If hardware filter is defined then read from hardware filter, if not then read from other pins
-  #if HARDWARE_FILTER
-  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true); // puts ADC into continous mode hardware filter
-  #else
-  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true); // puts ADC into continous mode no filter
-  #endif
+  //If hardware filter is defined then read from hardware filter, if not then read from other pins
+#if HARDWARE_FILTER
+  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);  // puts ADC into continous mode hardware filter
+#else
+  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true);  // puts ADC into continous mode no filter
+#endif
 
-  delay(500);
+  vTaskDelay(500 / portTICK_PERIOD_MS);
   Serial.println("ADC Range: +/- 1.024V  1 bit = 0.5mV");
   ads.begin();
   Serial.println("C1.102");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
@@ -379,7 +392,7 @@ void setup() {
   tft.setFreeFont(&FreeMonoBold12pt7b);  // Select the font
   tft.setTextDatum(BR_DATUM);            //Adjusts reference point of text generation
   tft.drawString("C1.101", 320, 170);    // Print the version number in the bottom right
-  delay(2000);
+  vTaskDelay(1000 / portTICK_PERIOD_MS);
   bin_sem = xSemaphoreCreateBinary();
 
   // Start Task 0 (in Core 0)
@@ -436,42 +449,40 @@ void pngDraw(PNGDRAW *pDraw) {
 // Function that displays current at top center of LCD
 void amp_display(const GFXfont *font) {
 
-  tft.setTextColor(TFT_RED);              //Sets color of text to red
-  tft.setFreeFont(font);                  // Selects the font
-  tft.setTextDatum(TC_DATUM);             // Adjusts reference point of text generation to top center
+  tft.setTextColor(TFT_RED);                       //Sets color of text to red
+  tft.setFreeFont(font);                           // Selects the font
+  tft.setTextDatum(TC_DATUM);                      // Adjusts reference point of text generation to top center
   sprintf(task1_string, "%.0f", wave.amp_peak());  // stores peak amp value into string to be printed to LCD
-  tft.drawString(task1_string, ampX, ampY);     // Print the test text in the custom font
+  tft.drawString(task1_string, ampX, ampY);        // Print the test text in the custom font
 }
 
 // Function that displays time in bottom right corner of LCD
 void time_display(const GFXfont *font) {
 
-  tft.setTextColor(TFT_WHITE);                          // Sets color of text to white
-  tft.setFreeFont(font);                                // Selects the font
-  tft.setTextDatum(BR_DATUM);                           //Adjusts reference point of text generation to bottom right
+  tft.setTextColor(TFT_WHITE);                                // Sets color of text to white
+  tft.setFreeFont(font);                                      // Selects the font
+  tft.setTextDatum(BR_DATUM);                                 //Adjusts reference point of text generation to bottom right
   sprintf(task1_string, "%.2f%s", wave.timerDisplay(), "s");  // stores corrected time value into string to be printed to LCD
 
   //Check that corrected time is above 0 seconds. If time negative then print N/A instead
   if (wave.timerDisplay() > 0) {
     tft.drawString(task1_string, timeX, timeY);  // prints string to LCD screen
   } else {
-    tft.drawString("N/A", timeX, timeY);  // prints string to LCD screen
+    tft.drawString("Neg", timeX, timeY);  // prints string to LCD screen
   }
 }
 
 // Function that displays the voltage in bottom left corner of LCD
 void volt_display(const GFXfont *font) {
   float volt_peak = wave.volt_peak();
-  tft.setTextColor(TFT_WHITE);                            // Sets color of text to white
-  tft.setFreeFont(font);                                  // Select the font
-  tft.setTextDatum(BL_DATUM);                             // Adjusts reference point of text generation to bottom left
+  tft.setTextColor(TFT_WHITE);                       // Sets color of text to white
+  tft.setFreeFont(font);                             // Select the font
+  tft.setTextDatum(BL_DATUM);                        // Adjusts reference point of text generation to bottom left
   sprintf(task1_string, "%.0f%s", volt_peak, "mv");  // stores voltage peak into string to be printed to LCD
-  if (volt_peak > 0){
-  tft.drawString(task1_string, voltX, voltY);                   // prints string to LCD screen
-  }
-  else {
-    tft.drawString("N/A", voltX, voltY);  // prints string to LCD screen
-    
+  if (volt_peak > 0) {
+    tft.drawString(task1_string, voltX, voltY);  // prints string to LCD screen
+  } else {
+    tft.drawString("Neg", voltX, voltY);  // prints string to LCD screen
   }
 }
 
@@ -493,18 +504,15 @@ void reconfigure() {
   mtp[1] = digitalRead(18);
   mtp[2] = digitalRead(44);
   mtp[3] = digitalRead(43);
-  if (mtp[0] == 1 && mtp[1] == 1) { 
-    wave.shunt_type(1); //D10 Off, D18 Off
-  }  
-  else if (mtp[0] == 1 && mtp[1] == 0) {
+  if (mtp[0] == 1 && mtp[1] == 1) {
+    wave.shunt_type(1);  //D10 Off, D18 Off
+  } else if (mtp[0] == 1 && mtp[1] == 0) {
     wave.shunt_type(2);  // D10 Off, D18 On
-  } 
-  else if (mtp[0] == 0 && mtp[1] == 1) { 
-    wave.shunt_type(3);   //D10 On, D18 Off
-    }
-  else if (mtp[0] == 0 && mtp[1] == 0) {
-    wave.shunt_type(0); //D10 On, D18 On
-  }                            
-  else { wave.shunt_type(0); //D10 On, D18 On
-  }  
+  } else if (mtp[0] == 0 && mtp[1] == 1) {
+    wave.shunt_type(3);  //D10 On, D18 Off
+  } else if (mtp[0] == 0 && mtp[1] == 0) {
+    wave.shunt_type(0);  //D10 On, D18 On
+  } else {
+    wave.shunt_type(0);  //D10 On, D18 On
+  }
 }
