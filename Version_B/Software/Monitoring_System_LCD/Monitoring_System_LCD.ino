@@ -11,6 +11,8 @@
 * "D10: Off, D18: On" for 1000/50 shunt
 * "D10: On, D18: Off" for 1000/100 shunt
 * "D10: On, D18: On" for 1000/200 shunt
+* D44 On = Hardware Filter On
+* D44 Off = Hardware FIlter Off
 * 
 * LCD uses SPI protocol to communicate
 *
@@ -33,7 +35,6 @@ empty for other platforms. Be careful - other platforms may have
 #define IRAM_ATTR
 #endif
 
-#define HARDWARE_FILTER 0    // 0 for no hardware filter |  1 if hardware filter
 #define I2C_SDA 12           // I2C Data pin for ADC
 #define I2C_SCL 13           // I2C Clock pin for ADC
 #define MAX_IMAGE_WDITH 320  // Solid State Systems logo pixel width
@@ -61,7 +62,7 @@ float timeY = 170;  // display y axis pixel coordinate
 float voltX = 0;    // display x axis pixel coordinate
 float voltY = 170;  // display y axis pixel coordinate
 
-//Variables needed for Solid State Systems compoany Logo LCD display
+//Variables needed for Solid State Systems company Logo LCD display
 PNG png;           // PNG decoder instance
 int16_t xpos = 0;  // x-coordinate of logo
 int16_t ypos = 0;  // y-coordinate of logo
@@ -71,6 +72,8 @@ char task0_string[50];               //string to hold display data, non-essentia
 char task1_string[50];               //string to hold display data, non-essential but useful for debugging and logging
 const int WAVEFORM_MAX_SIZE = 2890;  // amount of samples stored. Number chosen for 1 seconds worth of samples. Sampling rate: 1450 samples/sec
 const int SENS_SIZE = 10;            //size of array that checks for consistent voltage above threshold sensitivity
+bool hardware_filter = 0;           // changes hardware filter; 0 is off and 2 is on
+bool old_hardware_filter = 0;       // keeps track of previous hardware filter value in order to detect change
 
 //Function used in the qsort function argument. Customize it based on what the size of the data type and if you want ascending sort or descending sort
 int comp(const void *elem1, const void *elem2);
@@ -124,6 +127,17 @@ public:
     startTime = millis();  //marks the beginning time of the waveform
       // if newest ADC readings below a certain sensitivity then end capture
     while (!(waveform_ended())) {
+      debugln(hardware_filter);
+      if (old_hardware_filter != hardware_filter) {
+        old_hardware_filter = hardware_filter;
+        if (hardware_filter == 1) {
+          //turn on hardware filter
+          ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);  // puts ADC into continous mode hardware filter
+        } else {
+          //turn off hardware filter
+          ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true);  // puts ADC into continous mode hardware filter
+        }
+      }
       sensorVal = (float)ads.getLastConversionResults();  // polling for sensor values to see when there is actually significant voltage (voltage above the threshold value)
       sample_count++;
       debug("SensorValue: ");
@@ -131,10 +145,10 @@ public:
       Waveform.push(sensorVal);
       sensBuffer.push(sensorVal);
     }
-    // If samples are really low then return and 
-    if (sample_count < 100) {
-        debugln("Low Samples");
-        return;
+    // If samples are really low then return and
+    if (sample_count < 200) {
+      debugln("Low Samples");
+      return;
     }
     endTime = millis();  //signals end of timer
     waveform_time = ((endTime - startTime) / 1000);
@@ -231,16 +245,16 @@ public:
   [Shunt 1: 1000/25 shunt] [Shunt 2: 1000/50 shunt] [Shunt 3: 1000/100 shunt] */
   float set_amp_peak() {
     switch (shunt) {
-      case 1:
-        ampPeak = 40 * volt_peak();
+      case 0:
+        ampPeak = 10 * volt_peak();
         return ampPeak;
         break;
-      case 2:
+      case 1:
         ampPeak = 20 * volt_peak();
         return ampPeak;
         break;
-      case 3:
-        ampPeak = 10 * volt_peak();
+      case 2:
+        ampPeak = 40 * volt_peak();
         return ampPeak;
         break;
       default:
@@ -275,8 +289,10 @@ void time_display(const GFXfont *font);
 void volt_display(const GFXfont *font);
 
 
-//interrupt that will call reconfigure function
-void IRAM_ATTR CONFIG_INTERRUPT();
+//INTERRUPTS
+void IRAM_ATTR CONFIG_INTERRUPT();  // interrupt that will call reconfigure function
+void IRAM_ATTR ADS_READING();       // Changes between hardware filter and no hardware filter
+
 //read the dip switches and change the multiplier of the voltage to amps based on the dip switch readings
 void reconfigure();
 
@@ -296,6 +312,17 @@ static SemaphoreHandle_t bin_sem;
 // Task in Core 0
 void doTask0(void *parameters) {
   while (1) {
+    debugln(hardware_filter);
+    if (old_hardware_filter != hardware_filter) {
+      old_hardware_filter = hardware_filter;
+      if (hardware_filter == 1) {
+        //turn on hardware filter
+        ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);  // puts ADC into continous mode hardware filter
+      } else {
+        //turn off hardware filter
+        ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true);  // puts ADC into continous mode hardware filter
+      }
+    }
     if (wave.waveform_exist()) {
       wave.waveform_capture();
     }
@@ -343,6 +370,7 @@ void setup() {
   pinMode(18, INPUT_PULLUP);     //D18 multiplexer input
   pinMode(44, INPUT_PULLUP);     //D44 multiplexer input
   pinMode(43, INPUT_PULLUP);     //D43 multiplexer input
+  pinMode(14, INPUT_PULLUP);     //D14 Onboard Button for Hardware Filter Config
   tft.begin();                   // initializes communication LCD screen
   tft.setRotation(3);            // Sets orientation of display [1: 0 degrees] [2: 90 degrees] [3: 180 degrees] [4: 270 degrees]
   tft.fillScreen(TFT_BLACK);     // Clear screen
@@ -359,6 +387,13 @@ void setup() {
   }
   ads.setGain(GAIN_TWO);  // 2x gain   +/- 2.048V  1 bit = 1mV | // 4x gain   +/- 1.024V  1 bit = 0.5mV
 
+  if (hardware_filter == 1) {
+    //turn on hardware filter
+    ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);  // puts ADC into continous mode hardware filter
+  } else {
+    //turn off hardware filter
+    ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true);  // puts ADC into continous mode hardware filter
+  }
   // Set up the GPIO pin for the external interrupt
   reconfigure();
   attachInterrupt(digitalPinToInterrupt(10), CONFIG_INTERRUPT, CHANGE);
@@ -366,15 +401,20 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(44), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(43), CONFIG_INTERRUPT, CHANGE);
 
-  //If hardware filter is defined then read from hardware filter, if not then read from other pins
-#if HARDWARE_FILTER
-  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);  // puts ADC into continous mode hardware filter
-#else
-  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true);  // puts ADC into continous mode no filter
-#endif
+  // Set up LCD Buttons to change to hardware filter or no hardware filter readings
+  attachInterrupt(digitalPinToInterrupt(14), ADS_READING, CHANGE);
+  //                                                                ADS1015  ADS1115
+  //                                                                -------  -------
+  // ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
+  // ads.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
+  // ads.setGain(GAIN_TWO);        // 2x gain   +/- 2.048V  1 bit = 1mV      0.0625mV
+  // ads.setGain(GAIN_FOUR);       // 4x gain   +/- 1.024V  1 bit = 0.5mV    0.03125mV
+  // ads.setGain(GAIN_EIGHT);      // 8x gain   +/- 0.512V  1 bit = 0.25mV   0.015625mV
+  // ads.setGain(GAIN_SIXTEEN);    // 16x gain  +/- 0.256V  1 bit = 0.125mV  0.0078125mV
+
 
   vTaskDelay(500 / portTICK_PERIOD_MS);
-  Serial.println("ADC Range: +/- 1.024V  1 bit = 0.5mV");
+  Serial.println("ADC Range: +/- 2.048V  1 bit = 1mV");
   ads.begin();
   Serial.println("C1.102");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
 
@@ -497,6 +537,9 @@ void volt_display(const GFXfont *font) {
 void IRAM_ATTR CONFIG_INTERRUPT() {
   reconfigure();
 }
+void IRAM_ATTR ADS_READING() {
+  hardware_filter = !hardware_filter;
+}
 // read the dip switches and change the multiplier of the voltage to amps based on the dip switch readings
 void reconfigure() {
   int mtp[4];  //array for storing multiplexer DIP SWITCH values. Used to configure start up settings like what the multiplier value will be
@@ -505,14 +548,21 @@ void reconfigure() {
   mtp[2] = digitalRead(44);
   mtp[3] = digitalRead(43);
   if (mtp[0] == 1 && mtp[1] == 1) {
-    wave.shunt_type(1);  //D10 Off, D18 Off
+    wave.shunt_type(0);  //D10 Off, D18 Off
   } else if (mtp[0] == 1 && mtp[1] == 0) {
-    wave.shunt_type(2);  // D10 Off, D18 On
+    wave.shunt_type(1);  // D10 Off, D18 On
   } else if (mtp[0] == 0 && mtp[1] == 1) {
-    wave.shunt_type(3);  //D10 On, D18 Off
+    wave.shunt_type(2);  //D10 On, D18 Off
   } else if (mtp[0] == 0 && mtp[1] == 0) {
-    wave.shunt_type(0);  //D10 On, D18 On
+    wave.shunt_type(3);  //D10 On, D18 On
   } else {
-    wave.shunt_type(0);  //D10 On, D18 On
+    wave.shunt_type(3);  //D10 On, D18 On
+  }
+
+  //hardware filter is on if switch is on
+  if (mtp[2] == 0) {
+    hardware_filter = 1;
+  } else {
+    hardware_filter = 0;
   }
 }

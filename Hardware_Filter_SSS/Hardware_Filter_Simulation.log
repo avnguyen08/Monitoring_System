@@ -1,22 +1,73 @@
-Circuit: * C:\Users\aaron\OneDrive\Desktop\repos\Monitoring_System\Hardware_Filter_SSS\Hardware_Filter_Simulation.asc
+Circuit: * C:\Users\John\Desktop\Monitoring_System\Hardware_Filter_SSS\Hardware_Filter_Simulation.asc
 
-Direct Newton iteration for .op point succeeded.
+Direct Newton iteration failed to find .op point.  (Use ".option noopiter" to skip.)
+Starting Gmin stepping
+Gmin = 10
+Gmin = 1.07374
+Gmin = 0.115292
+Gmin = 0.0123794
+Gmin = 0.00132923
+Gmin = 0.000142725
+Gmin = 1.5325e-05
+Gmin = 1.6455e-06
+Gmin = 1.76685e-07
+Gmin = 1.89714e-08
+Gmin = 2.03704e-09
+Gmin = 2.18725e-10
+Gmin = 2.34854e-11
+Gmin = 2.52173e-12
+Gmin = 2.70769e-13
+Gmin = 0
+Gmin stepping succeeded in finding the operating point.
 
-Date: Sat Dec 23 23:19:01 2023
-Total elapsed time: 0.656 seconds.
+Heightened Def Con from 0.00720519 to 0.00720519
+Heightened Def Con from 0.0156585 to 0.0156585
+Heightened Def Con from 0.0238798 to 0.0238798
+Heightened Def Con from 0.0259882 to 0.0259882
+Heightened Def Con from 0.0323004 to 0.0323004
+Heightened Def Con from 0.0488903 to 0.0488903
+Heightened Def Con from 0.0489878 to 0.0489878
+Heightened Def Con from 0.0655584 to 0.0655584
+Heightened Def Con from 0.0655752 to 0.0655752
+Heightened Def Con from 0.0655935 to 0.0655935
+Heightened Def Con from 0.0759947 to 0.0759947
+Heightened Def Con from 0.0822382 to 0.0822382
+Heightened Def Con from 0.0822877 to 0.0822877
+Heightened Def Con from 0.0822958 to 0.0822958
+Heightened Def Con from 0.0833209 to 0.0833209
+Heightened Def Con from 0.0905571 to 0.0905571
+Heightened Def Con from 0.0988931 to 0.0988931
+Heightened Def Con from 0.0989862 to 0.0989862
+Heightened Def Con from 0.109329 to 0.109329
+Heightened Def Con from 0.115555 to 0.115555
+Heightened Def Con from 0.115593 to 0.115593
+Heightened Def Con from 0.115604 to 0.115604
+Heightened Def Con from 0.123892 to 0.123892
+Heightened Def Con from 0.126002 to 0.126002
+Heightened Def Con from 0.132296 to 0.132296
+Heightened Def Con from 0.142664 to 0.142664
+Heightened Def Con from 0.148904 to 0.148904
+Heightened Def Con from 0.148954 to 0.148954
+Heightened Def Con from 0.148963 to 0.148963
+Heightened Def Con from 0.157223 to 0.157223
+Heightened Def Con from 0.165593 to 0.165593
+Heightened Def Con from 0.181958 to 0.181958
+
+Date: Sun Jan 14 22:55:43 2024
+Total elapsed time: 0.820 seconds.
 
 tnom = 27
 temp = 27
 method = modified trap
-totiter = 70671
-traniter = 70649
-tranpoints = 21060
-accept = 14552
-rejected = 6508
-matrix size = 34
-fillins = 19
+totiter = 105321
+traniter = 104971
+tranpoints = 42564
+accept = 29615
+rejected = 12981
+matrix size = 42
+fillins = 33
 solver = Normal
 Avg thread counts: 1.0/1.1/1.1/1.0
-Matrix Compiler1: 2.41 KB object code size  2.0/1.0/[0.7]
-Matrix Compiler2: 3.42 KB object code size  0.4/0.5/[0.3]
+Matrix Compiler1: 3.60 KB object code size  1.0/0.5/[0.4]
+Matrix Compiler2: 4.92 KB object code size  0.5/0.6/[0.3]
 
