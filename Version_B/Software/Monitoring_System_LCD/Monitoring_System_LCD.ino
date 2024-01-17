@@ -72,8 +72,8 @@ char task0_string[50];               //string to hold display data, non-essentia
 char task1_string[50];               //string to hold display data, non-essential but useful for debugging and logging
 const int WAVEFORM_MAX_SIZE = 2890;  // amount of samples stored. Number chosen for 1 seconds worth of samples. Sampling rate: 1450 samples/sec
 const int SENS_SIZE = 10;            //size of array that checks for consistent voltage above threshold sensitivity
-bool hardware_filter = 0;           // changes hardware filter; 0 is off and 2 is on
-bool old_hardware_filter = 0;       // keeps track of previous hardware filter value in order to detect change
+bool hardware_filter = 0;            // changes hardware filter; 0 is off and 2 is on
+bool old_hardware_filter = 0;        // keeps track of previous hardware filter value in order to detect change
 
 //Function used in the qsort function argument. Customize it based on what the size of the data type and if you want ascending sort or descending sort
 int comp(const void *elem1, const void *elem2);
@@ -95,9 +95,11 @@ private:
   float counting_rate = 0;
   float ampPeak = 0.00;
   float voltPeak = 0;
-  const float front_trunc = 0.03;      // .7% amount of samples truncated at the beginning part of the array storing sensor values.
-  const float back_trunc = 0.06;       // 1.3% amount of samples truncated at the end part of the array storing sensor values.
-  const float back_sort_trunc = .001;  // amount of samples truncated at the end part of the sorted array
+  const float front_trunc = 0.03;      // No HW Filter: 3% amount of samples truncated at the beginning part of the array storing sensor values.
+  const float back_trunc = 0.06;       // No HW Filter: 6% amount of samples truncated at the end part of the array storing sensor values.
+  const float back_sort_trunc = .001;  // No HW Filter: .1% amount of samples truncated at the end part of the sorted array
+  const float hw_front_trunc = 0.4;    // HW Filter: 20% amount of samples truncated at the beginning part of the array storing sensor values.
+  const float hw_back_trunc = 0.4;     // HW Filter: 20% amount of samples truncated at the end part of the array storing sensor values
 public:
 
   bool complete_flag;                                 // flag that says waveform has been captured
@@ -127,7 +129,6 @@ public:
     startTime = millis();  //marks the beginning time of the waveform
       // if newest ADC readings below a certain sensitivity then end capture
     while (!(waveform_ended())) {
-      debugln(hardware_filter);
       if (old_hardware_filter != hardware_filter) {
         old_hardware_filter = hardware_filter;
         if (hardware_filter == 1) {
@@ -151,13 +152,16 @@ public:
       return;
     }
     endTime = millis();  //signals end of timer
-    waveform_time = ((endTime - startTime) / 1000);
-    displayTime = waveform_time + latency;  //accounts for latency issues in tracking
-
-
+    
     set_volt_peak();    //sets the peak voltage of the waveform
     set_amp_peak();     // sets the peak amp value of the waveform
     print_wave_form();  //prints the waveform
+
+    waveform_time = ((endTime - startTime) / 1000);
+    displayTime = correct_time(); // Corrects time and outputs it to display
+    displayTime += latency;  //accounts for latency issues in tracking
+
+
     samps_per_sec();
     debug("voltPeak: ");
     debugln(voltPeak);
@@ -208,37 +212,57 @@ public:
   //=========================================v==========================================
   float correct_time() {
     int iterate_count = 0;
-    for (int i = (Waveform.size() - 1); i > 1; --i) {
+    for (int i = (Waveform.size() - 1); i >= 0; --i) {
       //if value is greater than 90% of peak value, break out of for loop
       if (Waveform[i] > (.9 * voltPeak)) {
         break;
       }
       iterate_count++;
     }
-    return (displayTime - iterate_count / counting_rate);
+    return (waveform_time - (iterate_count / counting_rate));
   }
 
   //Takes in circular buffer of graph points and returns the peak of the buffer
   float set_volt_peak() {
     int wave_size = Waveform.size();  //size of waveform
-    //Variables deciding how much of the waveform to modify based on how long waveform is
-    int wave_start = front_trunc * wave_size;         //Cuts the front of waveform by changing the index the sort begins
-    int wave_end = back_trunc * wave_size;            //Cuts the back of waveform by ending for loop early
-    int wave_sort_end = back_sort_trunc * wave_size;  //Cuts any peak values from minor noise
 
-    CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
-    for (int i = wave_start; i < (wave_size - wave_end); ++i) {
-      Sorted_Waveform.push(Waveform[i]);
+    if (hardware_filter == 0) {
+
+      CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
+      //Variables deciding how much of the waveform to modify based on how long waveform is
+      int wave_start = front_trunc * wave_size;         //Cuts the front of waveform by changing the index the sort begins
+      int wave_end = back_trunc * wave_size;            //Cuts the back of waveform by ending for loop early
+      int wave_sort_end = back_sort_trunc * wave_size;  //Cuts any peak values from minor noise
+
+      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
+        Sorted_Waveform.push(Waveform[i]);
+      }
+
+      qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
+      voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];    // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
+      for (int i = 0; i < Sorted_Waveform.size(); ++i) {
+        sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
+        Serial.println(task0_string);
+      }
+      Sorted_Waveform.clear();
+      return voltPeak;
     }
+    if (hardware_filter == 1) {
+      //Variables deciding how much of the waveform to modify based on how long waveform is
+      int wave_start = hw_front_trunc * wave_size;  //Cuts the front of waveform by changing the index the sort begins
+      int wave_end = hw_back_trunc * wave_size;     //Cuts the back of waveform by ending for loop early
+      float wave_sum = 0;                           // sum count to be averaged later
+      float avg_count = 0;                               // counts wave amount being averaged
 
-    qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
-    voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];    // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
-    for (int i = 0; i < Sorted_Waveform.size(); ++i) {
-      sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
+      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
+        wave_sum += Waveform[i];
+        avg_count++;
+      }
+      voltPeak = wave_sum / avg_count; // takes average of waveform
+      sprintf(task0_string, "Sum Value: %f\nAvg Value: %f\n", wave_sum, voltPeak);
       Serial.println(task0_string);
+      return voltPeak;
     }
-    Sorted_Waveform.clear();
-    return voltPeak;
   }
 
   /*returns the peak amps for the waveform depending on what shunt is attached 
@@ -312,7 +336,6 @@ static SemaphoreHandle_t bin_sem;
 // Task in Core 0
 void doTask0(void *parameters) {
   while (1) {
-    debugln(hardware_filter);
     if (old_hardware_filter != hardware_filter) {
       old_hardware_filter = hardware_filter;
       if (hardware_filter == 1) {
@@ -508,7 +531,7 @@ void time_display(const GFXfont *font) {
   if (wave.timerDisplay() > 0) {
     tft.drawString(task1_string, timeX, timeY);  // prints string to LCD screen
   } else {
-    tft.drawString("Neg", timeX, timeY);  // prints string to LCD screen
+    tft.drawString("N/A", timeX, timeY);  // prints string to LCD screen
   }
 }
 
@@ -522,7 +545,7 @@ void volt_display(const GFXfont *font) {
   if (volt_peak > 0) {
     tft.drawString(task1_string, voltX, voltY);  // prints string to LCD screen
   } else {
-    tft.drawString("Neg", voltX, voltY);  // prints string to LCD screen
+    tft.drawString("N/A", voltX, voltY);  // prints string to LCD screen
   }
 }
 
