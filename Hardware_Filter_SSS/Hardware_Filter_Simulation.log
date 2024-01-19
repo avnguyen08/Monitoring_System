@@ -20,54 +20,28 @@ Gmin = 2.70769e-13
 Gmin = 0
 Gmin stepping succeeded in finding the operating point.
 
-Heightened Def Con from 0.00720519 to 0.00720519
-Heightened Def Con from 0.0156585 to 0.0156585
-Heightened Def Con from 0.0238798 to 0.0238798
-Heightened Def Con from 0.0259882 to 0.0259882
-Heightened Def Con from 0.0323004 to 0.0323004
-Heightened Def Con from 0.0488903 to 0.0488903
-Heightened Def Con from 0.0489878 to 0.0489878
-Heightened Def Con from 0.0655584 to 0.0655584
-Heightened Def Con from 0.0655752 to 0.0655752
-Heightened Def Con from 0.0655935 to 0.0655935
-Heightened Def Con from 0.0759947 to 0.0759947
-Heightened Def Con from 0.0822382 to 0.0822382
-Heightened Def Con from 0.0822877 to 0.0822877
-Heightened Def Con from 0.0822958 to 0.0822958
-Heightened Def Con from 0.0833209 to 0.0833209
-Heightened Def Con from 0.0905571 to 0.0905571
-Heightened Def Con from 0.0988931 to 0.0988931
-Heightened Def Con from 0.0989862 to 0.0989862
-Heightened Def Con from 0.109329 to 0.109329
-Heightened Def Con from 0.115555 to 0.115555
-Heightened Def Con from 0.115593 to 0.115593
-Heightened Def Con from 0.115604 to 0.115604
-Heightened Def Con from 0.123892 to 0.123892
-Heightened Def Con from 0.126002 to 0.126002
-Heightened Def Con from 0.132296 to 0.132296
-Heightened Def Con from 0.142664 to 0.142664
-Heightened Def Con from 0.148904 to 0.148904
-Heightened Def Con from 0.148954 to 0.148954
-Heightened Def Con from 0.148963 to 0.148963
-Heightened Def Con from 0.157223 to 0.157223
-Heightened Def Con from 0.165593 to 0.165593
-Heightened Def Con from 0.181958 to 0.181958
+Heightened Def Con from 0.032889 to 0.032889
+Heightened Def Con from 0.0340939 to 0.0340939
+Heightened Def Con from 0.0496578 to 0.0496578
+Heightened Def Con from 0.0997361 to 0.0997361
+Heightened Def Con from 0.116427 to 0.116427
+Heightened Def Con from 0.166531 to 0.166531
 
-Date: Sun Jan 14 22:55:43 2024
-Total elapsed time: 0.820 seconds.
+Date: Thu Jan 18 15:59:49 2024
+Total elapsed time: 0.182 seconds.
 
 tnom = 27
 temp = 27
 method = modified trap
-totiter = 105321
-traniter = 104971
-tranpoints = 42564
-accept = 29615
-rejected = 12981
+totiter = 6182
+traniter = 5832
+tranpoints = 2082
+accept = 1745
+rejected = 343
 matrix size = 42
 fillins = 33
 solver = Normal
-Avg thread counts: 1.0/1.1/1.1/1.0
-Matrix Compiler1: 3.60 KB object code size  1.0/0.5/[0.4]
-Matrix Compiler2: 4.92 KB object code size  0.5/0.6/[0.3]
+Avg thread counts: 1.7/3.0/3.0/1.7
+Matrix Compiler1: 3.60 KB object code size  0.9/0.6/[0.3]
+Matrix Compiler2: 4.92 KB object code size  0.6/0.7/[0.3]
 
