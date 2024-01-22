@@ -27,6 +27,7 @@
 #include "FontsAndImages.h"    // Contains my custom fonts and images
 #include <TFT_eWidget.h>       // Widget library
 #include <PNGdec.h>            //PNG decoder library
+#include <esp_task_wdt.h>
 
 /* This is required on ESP32 to put the ISR in IRAM. Define as
 empty for other platforms. Be careful - other platforms may have
@@ -34,6 +35,9 @@ empty for other platforms. Be careful - other platforms may have
 #ifndef IRAM_ATTR
 #define IRAM_ATTR
 #endif
+
+//3 seconds WDT
+#define WDT_TIMEOUT 10
 
 #define I2C_SDA 12           // I2C Data pin for ADC
 #define I2C_SCL 13           // I2C Clock pin for ADC
@@ -112,6 +116,7 @@ public:
   //checks if valid waveform is exists (Essentially differentiates between a waveform or noise)
   bool waveform_exist() {
 
+    esp_task_wdt_reset();
     sensBuffer.push((float)ads.getLastConversionResults());  // polling for sensor values to see when there is actually significant voltage (voltage above the threshold value)
     // checks if last two values are from a valid waveform
     for (int i = SENS_SIZE - 2; i < SENS_SIZE; ++i) {
@@ -124,6 +129,7 @@ public:
 
   //capture waveform
   void waveform_capture() {
+    esp_task_wdt_reset();
     Waveform.clear();  // Clears buffer so it doesn't have left over values
     sample_count = 0;
     startTime = millis();  //marks the beginning time of the waveform
@@ -152,7 +158,6 @@ public:
       return;
     }
     endTime = millis();  //signals end of timer
-    
     set_volt_peak();    //sets the peak voltage of the waveform
     set_amp_peak();     // sets the peak amp value of the waveform
     print_wave_form();  //prints the waveform
@@ -335,7 +340,13 @@ static SemaphoreHandle_t bin_sem;
 
 // Task in Core 0
 void doTask0(void *parameters) {
+  
+    // Subscribe this task to TWDT, then check if it is subscribed
+    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
+    ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
+
   while (1) {
+    
     if (old_hardware_filter != hardware_filter) {
       old_hardware_filter = hardware_filter;
       if (hardware_filter == 1) {
@@ -355,9 +366,14 @@ void doTask0(void *parameters) {
 // Task in Core 1
 void doTask1(void *parameters) {
 
+    // Subscribe this task to TWDT, then check if it is subscribed
+    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
+    ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
+    
   // Do forever
   while (1) {
     vTaskDelay(500 / portTICK_PERIOD_MS);
+    esp_task_wdt_reset();
     if (wave.complete_flag == 1) {
       tft.fillScreen(TFT_BLACK);  // Clear screen
 
@@ -385,6 +401,14 @@ void setup() {
 
   pinMode(15, OUTPUT);  // to boot with battery...
   digitalWrite(15, 1);  // and/or power from 5v rail instead of USB
+
+  
+#if !CONFIG_ESP_TASK_WDT_INIT
+    // If the TWDT was not initialized automatically on startup, manually intialize it now
+  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
+    printf("TWDT initialized\n");
+#endif // CONFIG_ESP_TASK_WDT_INIT
+
   Serial.begin(250000);
   vTaskDelay(500 / portTICK_PERIOD_MS);
   Serial.println("Testing");
@@ -454,7 +478,7 @@ void setup() {
   tft.setTextColor(TFT_RED);
   tft.setFreeFont(&FreeMonoBold12pt7b);  // Select the font
   tft.setTextDatum(BR_DATUM);            //Adjusts reference point of text generation
-  tft.drawString("C1.101", 320, 170);    // Print the version number in the bottom right
+  tft.drawString("C1.102", 320, 170);    // Print the version number in the bottom right
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   bin_sem = xSemaphoreCreateBinary();
 
