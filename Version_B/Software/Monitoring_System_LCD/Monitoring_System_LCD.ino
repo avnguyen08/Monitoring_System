@@ -234,49 +234,13 @@ public:
     bool dip_43 = digitalRead(43);    //  4th DIP Swtich
 
 
-    //DIP 3 OFF DIP 4 OFF : Truncate 40% off front and back and return average of what's left
+    //DIP 3 OFF DIP 4 OFF : Truncate 40% off front and 40% back. Sort. Cut off .5% of peak value and return average of what's left
     if (dip_44 == 1 && dip_43 == 1) {
-
-      //Variables deciding how much of the waveform to modify based on how long waveform is
-      int wave_start = .4 * wave_size;  //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = .4 * wave_size;    //Cuts the back of waveform by ending for loop early
-      float wave_sum = 0;               // sum count to be averaged later
-      float avg_count = 0;              // counts wave amount being averaged
-
-      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
-        wave_sum += Waveform[i];
-        avg_count++;
-      }
-      voltPeak = wave_sum / avg_count;  // takes average of waveform
-      sprintf(task0_string, "Sum Value: %f\nAvg Value: %f\n", wave_sum, voltPeak);
-      Serial.println(task0_string);
-      return voltPeak;
-    }
-    //DIP 3 OFF DIP 4 ON : Truncate 40% off front and 20% off the back and return average of what's left
-    else if (dip_44 == 1 && dip_43 == 0) {
-
-      //Variables deciding how much of the waveform to modify based on how long waveform is
-      int wave_start = .4 * wave_size;  //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = .2 * wave_size;    //Cuts the back of waveform by ending for loop early
-      float wave_sum = 0;               // sum count to be averaged later
-      float avg_count = 0;              // counts wave amount being averaged
-
-      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
-        wave_sum += Waveform[i];
-        avg_count++;
-      }
-      voltPeak = wave_sum / avg_count;  // takes average of waveform
-      sprintf(task0_string, "Sum Value: %f\nAvg Value: %f\n", wave_sum, voltPeak);
-      Serial.println(task0_string);
-      return voltPeak;
-    }
-    //DIP 3 ON DIP 4 OFF : Truncate 40% off front and 20% off back. Sort. Cut .1% off peak value and return peak value
-    else if (dip_44 == 0 && dip_43 == 1) {
       CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
       //Variables deciding how much of the waveform to modify based on how long waveform is
       int wave_start = .4 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = .2 * wave_size;         //Cuts the back of waveform by ending for loop early
-      int wave_sort_end = .001 * wave_size;  //Cuts any peak values from minor noise
+      int wave_end = .4 * wave_size;         //Cuts the back of waveform by ending for loop early
+      int wave_sort_end = .005 * wave_size;  //Cuts any peak values from minor noise
 
       for (int i = wave_start; i < (wave_size - wave_end); ++i) {
         Sorted_Waveform.push(Waveform[i]);
@@ -291,13 +255,12 @@ public:
       Sorted_Waveform.clear();
       return voltPeak;
     }
-
-    //DIP 3 ON DIP 4 ON : Truncate 20% off front and 20% off back. Sort. Cut .5% of peak values and return peak value
-    else if (dip_44 == 0 && dip_43 == 0) {
+    //DIP 3 OFF DIP 4 ON : Truncate 40% off front and 40% off back. Sort. Cut .5% off peak value. Avg last 6.9% of waveform and return avg value
+    else if (dip_44 == 1 && dip_43 == 0) {
       CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
       //Variables deciding how much of the waveform to modify based on how long waveform is
-      int wave_start = .2 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = .2 * wave_size;         //Cuts the back of waveform by ending for loop early
+      int wave_start = .4 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
+      int wave_end = .4 * wave_size;         //Cuts the back of waveform by ending for loop early
       int wave_sort_end = .005 * wave_size;  //Cuts any peak values from minor noise
 
       for (int i = wave_start; i < (wave_size - wave_end); ++i) {
@@ -305,7 +268,74 @@ public:
       }
 
       qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
-      voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];    // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
+      float wave_sum = 0;               // sum count to be averaged later
+      float avg_count = 0;              // counts wave amount being averaged
+      int wave_sort_end_ave = .069 * Sorted_Waveform.size();  //Percentage of waveform to be averaged
+      //averaging out values towards the end of the sorted waveform
+      for (int i = Sorted_Waveform.size() - 2 - wave_sort_end-wave_sort_end_ave; i < (Sorted_Waveform.size() - 2 - wave_sort_end); ++i) {
+        wave_sum += Waveform[i];
+        avg_count++;
+      }
+      voltPeak = wave_sum / avg_count;  // takes average of waveform
+      for (int i = 0; i < Sorted_Waveform.size(); ++i) {
+        sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
+        Serial.println(task0_string);
+      }
+      Sorted_Waveform.clear();
+      return voltPeak;
+    }
+    //DIP 3 ON DIP 4 OFF : Truncate 40% off front and 40% off back. Sort. Cut .5% off peak value. Avg last 1.3% of waveform and return avg value
+    else if (dip_44 == 0 && dip_43 == 1) {
+      CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
+      //Variables deciding how much of the waveform to modify based on how long waveform is
+      int wave_start = .4 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
+      int wave_end = .4 * wave_size;         //Cuts the back of waveform by ending for loop early
+      int wave_sort_end = .005 * wave_size;  //Cuts any peak values from minor noise
+
+      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
+        Sorted_Waveform.push(Waveform[i]);
+      }
+
+      qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
+      float wave_sum = 0;               // sum count to be averaged later
+      float avg_count = 0;              // counts wave amount being averaged
+      int wave_sort_end_ave = .013 * Sorted_Waveform.size();  //Percentage of waveform to be averaged
+      //averaging out values towards the end of the sorted waveform
+      for (int i = Sorted_Waveform.size() - 2 - wave_sort_end-wave_sort_end_ave; i < (Sorted_Waveform.size() - 2 - wave_sort_end); ++i) {
+        wave_sum += Waveform[i];
+        avg_count++;
+      }
+      voltPeak = wave_sum / avg_count;  // takes average of waveform
+      for (int i = 0; i < Sorted_Waveform.size(); ++i) {
+        sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
+        Serial.println(task0_string);
+      }
+      Sorted_Waveform.clear();
+      return voltPeak;
+    }
+
+    //DIP 3 ON DIP 4 ON : Truncate 40% off front and 40% off back. Sort. Cut .5% off peak value. Avg last 1.3% of waveform and return avg value
+    else if (dip_44 == 0 && dip_43 == 0) {
+      CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
+      //Variables deciding how much of the waveform to modify based on how long waveform is
+      int wave_start = .4 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
+      int wave_end = .1 * wave_size;         //Cuts the back of waveform by ending for loop early
+      int wave_sort_end = .005 * wave_size;  //Cuts any peak values from minor noise
+
+      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
+        Sorted_Waveform.push(Waveform[i]);
+      }
+
+      qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
+      float wave_sum = 0;               // sum count to be averaged later
+      float avg_count = 0;              // counts wave amount being averaged
+      int wave_sort_end_ave = .027 * Sorted_Waveform.size();  //Percentage of waveform to be averaged
+      //averaging out values towards the end of the sorted waveform
+      for (int i = Sorted_Waveform.size() - 2 - wave_sort_end-wave_sort_end_ave; i < (Sorted_Waveform.size() - 2 - wave_sort_end); ++i) {
+        wave_sum += Waveform[i];
+        avg_count++;
+      }
+      voltPeak = wave_sum / avg_count;  // takes average of waveform
       for (int i = 0; i < Sorted_Waveform.size(); ++i) {
         sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
         Serial.println(task0_string);
