@@ -76,8 +76,8 @@ char task0_string[50];               //string to hold display data, non-essentia
 char task1_string[50];               //string to hold display data, non-essential but useful for debugging and logging
 const int WAVEFORM_MAX_SIZE = 2890;  // amount of samples stored. Number chosen for 1 seconds worth of samples. Sampling rate: 1450 samples/sec
 const int SENS_SIZE = 10;            //size of array that checks for consistent voltage above threshold sensitivity
-bool hardware_filter = 0;            // changes hardware filter; 0 is off and 2 is on
-bool old_hardware_filter = 0;        // keeps track of previous hardware filter value in order to detect change
+bool hardware_filter = 1;            // changes hardware filter; 0 is off and 1 is on
+bool old_hardware_filter = 1;        // keeps track of previous hardware filter value in order to detect change
 
 //Function used in the qsort function argument. Customize it based on what the size of the data type and if you want ascending sort or descending sort
 int comp(const void *elem1, const void *elem2);
@@ -99,8 +99,8 @@ private:
   float counting_rate = 0;
   float ampPeak = 0.00;
   float voltPeak = 0;
-  const float front_trunc = 0.03;      // No HW Filter: 3% amount of samples truncated at the beginning part of the array storing sensor values.
-  const float back_trunc = 0.06;       // No HW Filter: 6% amount of samples truncated at the end part of the array storing sensor values.
+  const float front_trunc = 0.4;       // 40% amount of samples truncated at the beginning part of the array storing sensor values.
+  const float back_trunc = 0.2;        // 20% amount of samples truncated at the end part of the array storing sensor values.
   const float back_sort_trunc = .001;  // No HW Filter: .1% amount of samples truncated at the end part of the sorted array
   const float hw_front_trunc = 0.4;    // HW Filter: 20% amount of samples truncated at the beginning part of the array storing sensor values.
   const float hw_back_trunc = 0.4;     // HW Filter: 20% amount of samples truncated at the end part of the array storing sensor values
@@ -158,13 +158,13 @@ public:
       return;
     }
     endTime = millis();  //signals end of timer
-    set_volt_peak();    //sets the peak voltage of the waveform
-    set_amp_peak();     // sets the peak amp value of the waveform
-    print_wave_form();  //prints the waveform
+    set_volt_peak();     //sets the peak voltage of the waveform
+    set_amp_peak();      // sets the peak amp value of the waveform
+    print_wave_form();   //prints the waveform
 
     waveform_time = ((endTime - startTime) / 1000);
-    displayTime = correct_time(); // Corrects time and outputs it to display
-    displayTime += latency;  //accounts for latency issues in tracking
+    displayTime = correct_time();  // Corrects time and outputs it to display
+    displayTime += latency;        //accounts for latency issues in tracking
 
 
     samps_per_sec();
@@ -230,14 +230,53 @@ public:
   //Takes in circular buffer of graph points and returns the peak of the buffer
   float set_volt_peak() {
     int wave_size = Waveform.size();  //size of waveform
+    bool dip_44 = digitalRead(44);    //  3rd DIP Switch
+    bool dip_43 = digitalRead(43);    //  4th DIP Swtich
 
-    if (hardware_filter == 0) {
 
+    //DIP 3 OFF DIP 4 OFF : Truncate 40% off front and back and return average of what's left
+    if (dip_44 == 1 && dip_43 == 1) {
+
+      //Variables deciding how much of the waveform to modify based on how long waveform is
+      int wave_start = .4 * wave_size;  //Cuts the front of waveform by changing the index the sort begins
+      int wave_end = .4 * wave_size;    //Cuts the back of waveform by ending for loop early
+      float wave_sum = 0;               // sum count to be averaged later
+      float avg_count = 0;              // counts wave amount being averaged
+
+      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
+        wave_sum += Waveform[i];
+        avg_count++;
+      }
+      voltPeak = wave_sum / avg_count;  // takes average of waveform
+      sprintf(task0_string, "Sum Value: %f\nAvg Value: %f\n", wave_sum, voltPeak);
+      Serial.println(task0_string);
+      return voltPeak;
+    }
+    //DIP 3 OFF DIP 4 ON : Truncate 40% off front and 20% off the back and return average of what's left
+    else if (dip_44 == 1 && dip_43 == 0) {
+
+      //Variables deciding how much of the waveform to modify based on how long waveform is
+      int wave_start = .4 * wave_size;  //Cuts the front of waveform by changing the index the sort begins
+      int wave_end = .2 * wave_size;    //Cuts the back of waveform by ending for loop early
+      float wave_sum = 0;               // sum count to be averaged later
+      float avg_count = 0;              // counts wave amount being averaged
+
+      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
+        wave_sum += Waveform[i];
+        avg_count++;
+      }
+      voltPeak = wave_sum / avg_count;  // takes average of waveform
+      sprintf(task0_string, "Sum Value: %f\nAvg Value: %f\n", wave_sum, voltPeak);
+      Serial.println(task0_string);
+      return voltPeak;
+    }
+    //DIP 3 ON DIP 4 OFF : Truncate 40% off front and 20% off back. Sort. Cut .1% off peak value and return peak value
+    else if (dip_44 == 0 && dip_43 == 1) {
       CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
       //Variables deciding how much of the waveform to modify based on how long waveform is
-      int wave_start = front_trunc * wave_size;         //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = back_trunc * wave_size;            //Cuts the back of waveform by ending for loop early
-      int wave_sort_end = back_sort_trunc * wave_size;  //Cuts any peak values from minor noise
+      int wave_start = .4 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
+      int wave_end = .2 * wave_size;         //Cuts the back of waveform by ending for loop early
+      int wave_sort_end = .001 * wave_size;  //Cuts any peak values from minor noise
 
       for (int i = wave_start; i < (wave_size - wave_end); ++i) {
         Sorted_Waveform.push(Waveform[i]);
@@ -252,20 +291,26 @@ public:
       Sorted_Waveform.clear();
       return voltPeak;
     }
-    if (hardware_filter == 1) {
+
+    //DIP 3 ON DIP 4 ON : Truncate 20% off front and 20% off back. Sort. Cut .5% of peak values and return peak value
+    else if (dip_44 == 0 && dip_43 == 0) {
+      CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
       //Variables deciding how much of the waveform to modify based on how long waveform is
-      int wave_start = hw_front_trunc * wave_size;  //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = hw_back_trunc * wave_size;     //Cuts the back of waveform by ending for loop early
-      float wave_sum = 0;                           // sum count to be averaged later
-      float avg_count = 0;                               // counts wave amount being averaged
+      int wave_start = .2 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
+      int wave_end = .2 * wave_size;         //Cuts the back of waveform by ending for loop early
+      int wave_sort_end = .005 * wave_size;  //Cuts any peak values from minor noise
 
       for (int i = wave_start; i < (wave_size - wave_end); ++i) {
-        wave_sum += Waveform[i];
-        avg_count++;
+        Sorted_Waveform.push(Waveform[i]);
       }
-      voltPeak = wave_sum / avg_count; // takes average of waveform
-      sprintf(task0_string, "Sum Value: %f\nAvg Value: %f\n", wave_sum, voltPeak);
-      Serial.println(task0_string);
+
+      qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
+      voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];    // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
+      for (int i = 0; i < Sorted_Waveform.size(); ++i) {
+        sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
+        Serial.println(task0_string);
+      }
+      Sorted_Waveform.clear();
       return voltPeak;
     }
   }
@@ -340,13 +385,13 @@ static SemaphoreHandle_t bin_sem;
 
 // Task in Core 0
 void doTask0(void *parameters) {
-  
-    // Subscribe this task to TWDT, then check if it is subscribed
-    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
-    ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
+
+  // Subscribe this task to TWDT, then check if it is subscribed
+  ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
+  ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
 
   while (1) {
-    
+
     if (old_hardware_filter != hardware_filter) {
       old_hardware_filter = hardware_filter;
       if (hardware_filter == 1) {
@@ -366,10 +411,10 @@ void doTask0(void *parameters) {
 // Task in Core 1
 void doTask1(void *parameters) {
 
-    // Subscribe this task to TWDT, then check if it is subscribed
-    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
-    ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
-    
+  // Subscribe this task to TWDT, then check if it is subscribed
+  ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
+  ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
+
   // Do forever
   while (1) {
     vTaskDelay(500 / portTICK_PERIOD_MS);
@@ -402,12 +447,12 @@ void setup() {
   pinMode(15, OUTPUT);  // to boot with battery...
   digitalWrite(15, 1);  // and/or power from 5v rail instead of USB
 
-  
+
 #if !CONFIG_ESP_TASK_WDT_INIT
     // If the TWDT was not initialized automatically on startup, manually intialize it now
-  esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
-    printf("TWDT initialized\n");
-#endif // CONFIG_ESP_TASK_WDT_INIT
+  esp_task_wdt_init(WDT_TIMEOUT, true);  //enable panic so ESP32 restarts
+  printf("TWDT initialized\n");
+#endif  // CONFIG_ESP_TASK_WDT_INIT
 
   Serial.begin(250000);
   vTaskDelay(500 / portTICK_PERIOD_MS);
@@ -606,10 +651,5 @@ void reconfigure() {
     wave.shunt_type(3);  //D10 On, D18 On
   }
 
-  //hardware filter is on if switch is on
-  if (mtp[2] == 0) {
-    hardware_filter = 1;
-  } else {
-    hardware_filter = 0;
-  }
+  hardware_filter = 1;  // make hardware filter reading always active
 }
