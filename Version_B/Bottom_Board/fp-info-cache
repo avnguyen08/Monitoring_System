@@ -1,4 +1,4 @@
-21453273513995450
+21456691022373985
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -40627,6 +40627,13 @@ Surface mounted socket strip SMD 2x40 2.00mm double row
 0
 80
 80
+Connector_PinSocket_2.54mm
+HC-05
+
+
+0
+6
+6
 Connector_PinSocket_2.54mm
 PinSocket_1x01_P2.54mm_Horizontal
 Through hole angled socket strip, 1x01, 2.54mm pitch, 8.51mm socket length, single row (from Kicad 4.0.7), script generated
@@ -89586,9 +89593,16 @@ Through hole pin header THT 1x05 2.54mm single row
 5
 5
 bot_lib
-DIN_5_Pin
+DIN_5_PIN
 
 
 0
 7
 7
+bot_lib
+Terminal_Strip_4_Pin
+
+
+0
+4
+4
