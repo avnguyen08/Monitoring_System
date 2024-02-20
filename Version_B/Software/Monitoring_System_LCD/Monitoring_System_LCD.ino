@@ -4,15 +4,13 @@
 * Project: Monitoring System Version C (LCD + Hardware Filter)
 *
 * Description: Secured Solutions Group program using the LilyGo T-Display S3 (170x320 pixels) to make a custom ammeter/timer for client. Communicates with external ADC via I2C protocol using it to read differential
-* voltage across varying shunts from 1000Amps/100mV to 1000Amps/25mV to detect the amperage. Uses software peak detector to obtain correct voltage. 
+* voltage across varying shunts from 1000Amps/100mV to 1000Amps/25mV to detect the amperage. Uses software average and peak detector to obtain correct voltage. 
 *
 * DIP Switch Configuration
 * "D10: Off, D18: Off" for 1000/25 shunt
 * "D10: Off, D18: On" for 1000/50 shunt
 * "D10: On, D18: Off" for 1000/100 shunt
 * "D10: On, D18: On" for 1000/200 shunt
-* D44 On = Hardware Filter On
-* D44 Off = Hardware FIlter Off
 * 
 * LCD uses SPI protocol to communicate
 *
@@ -230,89 +228,27 @@ public:
   //Takes in circular buffer of graph points and returns the peak of the buffer
   float set_volt_peak() {
     int wave_size = Waveform.size();  //size of waveform
-    bool dip_44 = digitalRead(44);    //  3rd DIP Switch
-    bool dip_43 = digitalRead(43);    //  4th DIP Swtich
 
+    //Variables deciding how much of the waveform to modify based on how long waveform is
+    int wave_start = .4 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
+    int wave_end = .2 * wave_size;         //Cuts the back of waveform by ending for loop early
+    int wave_sort_end = .001 * wave_size;  //Cuts any peak values from minor noise
 
-    //DIP 3 OFF DIP 4 OFF : Truncate 40% off front and back and return average of what's left
-    if (dip_44 == 1 && dip_43 == 1) {
+    // Truncate 40% off front and 20% off back. Sort. Cut .1% off peak value and return peak value
+    CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
 
-      //Variables deciding how much of the waveform to modify based on how long waveform is
-      int wave_start = .4 * wave_size;  //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = .4 * wave_size;    //Cuts the back of waveform by ending for loop early
-      float wave_sum = 0;               // sum count to be averaged later
-      float avg_count = 0;              // counts wave amount being averaged
+    for (int i = wave_start; i < (wave_size - wave_end); ++i) {
+      Sorted_Waveform.push(Waveform[i]);
+    }
 
-      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
-        wave_sum += Waveform[i];
-        avg_count++;
-      }
-      voltPeak = wave_sum / avg_count;  // takes average of waveform
-      sprintf(task0_string, "Sum Value: %f\nAvg Value: %f\n", wave_sum, voltPeak);
+    qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
+    voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];    // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
+    for (int i = 0; i < Sorted_Waveform.size(); ++i) {
+      sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
       Serial.println(task0_string);
-      return voltPeak;
     }
-    //DIP 3 OFF DIP 4 ON : Truncate 40% off front and 20% off the back and return average of what's left
-    else if (dip_44 == 1 && dip_43 == 0) {
-
-      //Variables deciding how much of the waveform to modify based on how long waveform is
-      int wave_start = .4 * wave_size;  //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = .2 * wave_size;    //Cuts the back of waveform by ending for loop early
-      float wave_sum = 0;               // sum count to be averaged later
-      float avg_count = 0;              // counts wave amount being averaged
-
-      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
-        wave_sum += Waveform[i];
-        avg_count++;
-      }
-      voltPeak = wave_sum / avg_count;  // takes average of waveform
-      sprintf(task0_string, "Sum Value: %f\nAvg Value: %f\n", wave_sum, voltPeak);
-      Serial.println(task0_string);
-      return voltPeak;
-    }
-    //DIP 3 ON DIP 4 OFF : Truncate 40% off front and 20% off back. Sort. Cut .1% off peak value and return peak value
-    else if (dip_44 == 0 && dip_43 == 1) {
-      CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
-      //Variables deciding how much of the waveform to modify based on how long waveform is
-      int wave_start = .4 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = .2 * wave_size;         //Cuts the back of waveform by ending for loop early
-      int wave_sort_end = .001 * wave_size;  //Cuts any peak values from minor noise
-
-      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
-        Sorted_Waveform.push(Waveform[i]);
-      }
-
-      qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
-      voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];    // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
-      for (int i = 0; i < Sorted_Waveform.size(); ++i) {
-        sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
-        Serial.println(task0_string);
-      }
-      Sorted_Waveform.clear();
-      return voltPeak;
-    }
-
-    //DIP 3 ON DIP 4 ON : Truncate 20% off front and 20% off back. Sort. Cut .5% of peak values and return peak value
-    else if (dip_44 == 0 && dip_43 == 0) {
-      CircularBuffer<float, WAVEFORM_MAX_SIZE> Sorted_Waveform;
-      //Variables deciding how much of the waveform to modify based on how long waveform is
-      int wave_start = .2 * wave_size;       //Cuts the front of waveform by changing the index the sort begins
-      int wave_end = .2 * wave_size;         //Cuts the back of waveform by ending for loop early
-      int wave_sort_end = .005 * wave_size;  //Cuts any peak values from minor noise
-
-      for (int i = wave_start; i < (wave_size - wave_end); ++i) {
-        Sorted_Waveform.push(Waveform[i]);
-      }
-
-      qsort(&Sorted_Waveform, Sorted_Waveform.size() + 1, sizeof(float), comp);  //qsort has strange bug where last entry in array is not sorted
-      voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];    // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
-      for (int i = 0; i < Sorted_Waveform.size(); ++i) {
-        sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
-        Serial.println(task0_string);
-      }
-      Sorted_Waveform.clear();
-      return voltPeak;
-    }
+    Sorted_Waveform.clear();
+    return voltPeak;
   }
 
   /*returns the peak amps for the waveform depending on what shunt is attached 
@@ -350,9 +286,6 @@ public:
     return (1000 * (-0.000653 + 0.00324 * voltPeak + 0.00000841 * voltPeak * voltPeak));  //2nd polynomial formula.
   }
 } wave;
-
-
-
 
 //Draws png for company logo
 void pngDraw(PNGDRAW *pDraw);
@@ -508,7 +441,7 @@ void setup() {
   vTaskDelay(500 / portTICK_PERIOD_MS);
   Serial.println("ADC Range: +/- 2.048V  1 bit = 1mV");
   ads.begin();
-  Serial.println("C1.102");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
+  Serial.println("C1.103");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
 
   tft.setTextDatum(MC_DATUM);
   int16_t rc = png.openFLASH((uint8_t *)Artboard_1, sizeof(Artboard_1), pngDraw);
@@ -523,7 +456,7 @@ void setup() {
   tft.setTextColor(TFT_RED);
   tft.setFreeFont(&FreeMonoBold12pt7b);  // Select the font
   tft.setTextDatum(BR_DATUM);            //Adjusts reference point of text generation
-  tft.drawString("C1.102", 320, 170);    // Print the version number in the bottom right
+  tft.drawString("C1.103", 320, 170);    // Print the version number in the bottom right
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   bin_sem = xSemaphoreCreateBinary();
 
@@ -650,6 +583,5 @@ void reconfigure() {
   } else {
     wave.shunt_type(3);  //D10 On, D18 On
   }
-
   hardware_filter = 1;  // make hardware filter reading always active
 }
