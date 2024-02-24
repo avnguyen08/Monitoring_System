@@ -392,10 +392,11 @@ void setup() {
   Serial.println("Testing");
   vTaskDelay(500 / portTICK_PERIOD_MS);
   pinMode(10, INPUT_PULLUP);     //D10 multiplexer input
-  pinMode(18, INPUT_PULLUP);     //D18 multiplexer input
-  pinMode(44, INPUT_PULLUP);     //D44 multiplexer input
-  pinMode(43, INPUT_PULLUP);     //D43 multiplexer input
-  pinMode(14, INPUT_PULLUP);     //D14 Onboard Button for Hardware Filter Config
+  pinMode(11, INPUT_PULLUP);     //D18 multiplexer input
+  pinMode(43, INPUT_PULLUP);     //D44 multiplexer input
+  pinMode(44, INPUT_PULLUP);     //D43 multiplexer input
+  pinMode(17, INPUT_PULLUP);     //D14 Onboard Button for Hardware Filter Config
+  pinMode(18, INPUT_PULLUP);     //D14 Onboard Button for Hardware Filter Config
   tft.begin();                   // initializes communication LCD screen
   tft.setRotation(3);            // Sets orientation of display [1: 0 degrees] [2: 90 degrees] [3: 180 degrees] [4: 270 degrees]
   tft.fillScreen(TFT_BLACK);     // Clear screen
@@ -412,22 +413,15 @@ void setup() {
   }
   ads.setGain(GAIN_TWO);  // 2x gain   +/- 2.048V  1 bit = 1mV | // 4x gain   +/- 1.024V  1 bit = 0.5mV
 
-  if (hardware_filter == 1) {
     //turn on hardware filter
     ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);  // puts ADC into continous mode hardware filter
-  } else {
-    //turn off hardware filter
-    ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true);  // puts ADC into continous mode hardware filter
-  }
   // Set up the GPIO pin for the external interrupt
   reconfigure();
   attachInterrupt(digitalPinToInterrupt(10), CONFIG_INTERRUPT, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(18), CONFIG_INTERRUPT, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(44), CONFIG_INTERRUPT, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(11), CONFIG_INTERRUPT, CHANGE);
   attachInterrupt(digitalPinToInterrupt(43), CONFIG_INTERRUPT, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(44), CONFIG_INTERRUPT, CHANGE);
 
-  // Set up LCD Buttons to change to hardware filter or no hardware filter readings
-  attachInterrupt(digitalPinToInterrupt(14), ADS_READING, CHANGE);
   //                                                                ADS1015  ADS1115
   //                                                                -------  -------
   // ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
@@ -441,7 +435,7 @@ void setup() {
   vTaskDelay(500 / portTICK_PERIOD_MS);
   Serial.println("ADC Range: +/- 2.048V  1 bit = 1mV");
   ads.begin();
-  Serial.println("C1.103");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
+  Serial.println("C1.104");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
 
   tft.setTextDatum(MC_DATUM);
   int16_t rc = png.openFLASH((uint8_t *)Artboard_1, sizeof(Artboard_1), pngDraw);
@@ -568,10 +562,10 @@ void IRAM_ATTR ADS_READING() {
 // read the dip switches and change the multiplier of the voltage to amps based on the dip switch readings
 void reconfigure() {
   int mtp[4];  //array for storing multiplexer DIP SWITCH values. Used to configure start up settings like what the multiplier value will be
-  mtp[0] = digitalRead(10);
-  mtp[1] = digitalRead(18);
-  mtp[2] = digitalRead(44);
-  mtp[3] = digitalRead(43);
+  mtp[0] = digitalRead(44);
+  mtp[1] = digitalRead(43);
+  mtp[2] = digitalRead(11);
+  mtp[3] = digitalRead(10);
   if (mtp[0] == 1 && mtp[1] == 1) {
     wave.shunt_type(0);  //D10 Off, D18 Off
   } else if (mtp[0] == 1 && mtp[1] == 0) {
