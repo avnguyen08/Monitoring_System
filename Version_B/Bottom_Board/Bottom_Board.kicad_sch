@@ -4,6 +4,13 @@
 
   (paper "A4")
 
+  (title_block
+    (title "Monitoring System (Bottom Board)")
+    (date "2024-02-24")
+    (rev "C1.03")
+    (company "Secured Solutions Group")
+  )
+
   (lib_symbols
     (symbol "Connector:Conn_01x02_Pin" (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
       (property "Reference" "J" (at 0 2.54 0)
