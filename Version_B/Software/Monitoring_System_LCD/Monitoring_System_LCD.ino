@@ -450,7 +450,7 @@ void setup() {
   tft.setTextColor(TFT_RED);
   tft.setFreeFont(&FreeMonoBold12pt7b);  // Select the font
   tft.setTextDatum(BR_DATUM);            //Adjusts reference point of text generation
-  tft.drawString("C1.103", 320, 170);    // Print the version number in the bottom right
+  tft.drawString("C1.104", 320, 170);    // Print the version number in the bottom right
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   bin_sem = xSemaphoreCreateBinary();
 
@@ -567,15 +567,16 @@ void reconfigure() {
   mtp[2] = digitalRead(11);
   mtp[3] = digitalRead(10);
   if (mtp[0] == 1 && mtp[1] == 1) {
-    wave.shunt_type(0);  //D10 Off, D18 Off
+    wave.shunt_type(0);  //D44 Off, D43 Off
   } else if (mtp[0] == 1 && mtp[1] == 0) {
-    wave.shunt_type(1);  // D10 Off, D18 On
+    wave.shunt_type(1);  // D44 Off, D43 On
   } else if (mtp[0] == 0 && mtp[1] == 1) {
-    wave.shunt_type(2);  //D10 On, D18 Off
+    wave.shunt_type(2);  //D44 On, D43 Off
+
   } else if (mtp[0] == 0 && mtp[1] == 0) {
-    wave.shunt_type(3);  //D10 On, D18 On
+    wave.shunt_type(3);  //D44 On, D43 On
   } else {
-    wave.shunt_type(3);  //D10 On, D18 On
+    wave.shunt_type(3);  //D44 On, D43 On
   }
   hardware_filter = 1;  // make hardware filter reading always active
 }
