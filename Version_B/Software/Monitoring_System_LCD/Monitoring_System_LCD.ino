@@ -7,10 +7,10 @@
 * voltage across varying shunts from 1000Amps/100mV to 1000Amps/25mV to detect the amperage. Uses software average and peak detector to obtain correct voltage. 
 *
 * DIP Switch Configuration
-* "D10: Off, D18: Off" for 1000/25 shunt
-* "D10: Off, D18: On" for 1000/50 shunt
-* "D10: On, D18: Off" for 1000/100 shunt
-* "D10: On, D18: On" for 1000/200 shunt
+* "D44: Off, D43: Off" for 1000/25 shunt
+* "D44: Off, D43: On" for 1000/50 shunt
+* "D44: On, D43: Off" for 1000/100 shunt
+* "D44: On, D43: On" for 1000/200 shunt
 * 
 * LCD uses SPI protocol to communicate
 *
@@ -45,8 +45,9 @@ empty for other platforms. Be careful - other platforms may have
 #define DEBUG 1
 //if in debugging mode then make each of these debug functions the same as a serial print.
 #if DEBUG
-#define debug(x) Serial.print(x)
-#define debugln(x) Serial.println(x)
+#define debug(x) Serial1.print(x)
+#define debugln(x) Serial1.println(x)
+
 //all debug lines are equal to nothing
 #else
 #define debug(x)
@@ -59,7 +60,7 @@ TFT_eSPI tft = TFT_eSPI();  // Use hardware SPI
 //coordinates for various TFT display features (T-Display S3 is 170x320 pixels)
 float ampX = 160;   // display x axis pixel coordinate
 float ampY = 10;    // display x axis pixel coordinate
-float timeX = 320;  // display x axis pixel coordinate
+float timeX = 160;  // display x axis pixel coordinate
 float timeY = 170;  // display y axis pixel coordinate
 float voltX = 0;    // display x axis pixel coordinate
 float voltY = 170;  // display y axis pixel coordinate
@@ -127,22 +128,14 @@ public:
 
   //capture waveform
   void waveform_capture() {
+    Serial1.println("Circle On");
+    tft.fillCircle(25, 145, 20, TFT_RED);
     esp_task_wdt_reset();
     Waveform.clear();  // Clears buffer so it doesn't have left over values
     sample_count = 0;
     startTime = millis();  //marks the beginning time of the waveform
       // if newest ADC readings below a certain sensitivity then end capture
     while (!(waveform_ended())) {
-      if (old_hardware_filter != hardware_filter) {
-        old_hardware_filter = hardware_filter;
-        if (hardware_filter == 1) {
-          //turn on hardware filter
-          ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);  // puts ADC into continous mode hardware filter
-        } else {
-          //turn off hardware filter
-          ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/true);  // puts ADC into continous mode hardware filter
-        }
-      }
       sensorVal = (float)ads.getLastConversionResults();  // polling for sensor values to see when there is actually significant voltage (voltage above the threshold value)
       sample_count++;
       debug("SensorValue: ");
@@ -150,6 +143,9 @@ public:
       Waveform.push(sensorVal);
       sensBuffer.push(sensorVal);
     }
+
+    Serial1.println("Circle Off");
+    tft.fillCircle(25, 145, 20, TFT_BLACK);
     // If samples are really low then return and
     if (sample_count < 200) {
       debugln("Low Samples");
@@ -203,7 +199,7 @@ public:
   void print_wave_form() {
     for (int i = 0; i < Waveform.size(); ++i) {
       sprintf(task0_string, "Array Value[%d] = %.0f", i, Waveform[i]);
-      Serial.println(task0_string);
+      Serial1.println(task0_string);
     }
   }
 
@@ -245,7 +241,7 @@ public:
     voltPeak = Sorted_Waveform[Sorted_Waveform.size() - 2 - wave_sort_end];    // - 1 for index starting at 0 and -1 for qsort bug mentioned in above comment
     for (int i = 0; i < Sorted_Waveform.size(); ++i) {
       sprintf(task0_string, "Sorted Value[%d] = %.0f", i, Sorted_Waveform[i]);
-      Serial.println(task0_string);
+      Serial1.println(task0_string);
     }
     Sorted_Waveform.clear();
     return voltPeak;
@@ -256,19 +252,19 @@ public:
   float set_amp_peak() {
     switch (shunt) {
       case 0:
-        ampPeak = 10 * volt_peak();
+        ampPeak = 1 * volt_peak();
         return ampPeak;
         break;
       case 1:
-        ampPeak = 20 * volt_peak();
+        ampPeak = 2 * volt_peak();
         return ampPeak;
         break;
       case 2:
-        ampPeak = 40 * volt_peak();
+        ampPeak = 4 * volt_peak();
         return ampPeak;
         break;
       default:
-        ampPeak = 40 * volt_peak();
+        ampPeak = 4 * volt_peak();
         return ampPeak;
     }
   } /*returns the peak amps for the waveform */
@@ -343,7 +339,6 @@ void doTask0(void *parameters) {
 
 // Task in Core 1
 void doTask1(void *parameters) {
-
   // Subscribe this task to TWDT, then check if it is subscribed
   ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
   ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
@@ -353,8 +348,9 @@ void doTask1(void *parameters) {
     vTaskDelay(500 / portTICK_PERIOD_MS);
     esp_task_wdt_reset();
     if (wave.complete_flag == 1) {
-      tft.fillScreen(TFT_BLACK);  // Clear screen
 
+      wave.complete_flag = 0;
+      tft.fillScreen(TFT_BLACK);  // Clear screen
 
       // if amp display more than 4 digits then change font size to smaller size
       if (wave.amp_peak() > 9999) {
@@ -364,12 +360,12 @@ void doTask1(void *parameters) {
       }
 
       time_display(TIMEFONT);  //displays time in bottom right of LCD
-      volt_display(TIMEFONT);  // displays voltage in bottom left of LCD
-
-      wave.complete_flag = 0;
+      long int timer = 4000;
+      long int time_stamp = millis();
     }
   }
 }
+
 
 //*****************************************************************************
 // Main (runs as its own task with priority 1 on core 1)
@@ -387,16 +383,15 @@ void setup() {
   printf("TWDT initialized\n");
 #endif  // CONFIG_ESP_TASK_WDT_INIT
 
-  Serial.begin(250000);
+  Serial.begin(921600);
+  Serial1.begin(921600, SERIAL_8N1, 18, 17);
   vTaskDelay(500 / portTICK_PERIOD_MS);
-  Serial.println("Testing");
+  Serial1.println("Serial1: Testing");
   vTaskDelay(500 / portTICK_PERIOD_MS);
   pinMode(10, INPUT_PULLUP);     //D10 multiplexer input
-  pinMode(11, INPUT_PULLUP);     //D18 multiplexer input
-  pinMode(43, INPUT_PULLUP);     //D44 multiplexer input
-  pinMode(44, INPUT_PULLUP);     //D43 multiplexer input
-  pinMode(17, INPUT_PULLUP);     //D14 Onboard Button for Hardware Filter Config
-  pinMode(18, INPUT_PULLUP);     //D14 Onboard Button for Hardware Filter Config
+  pinMode(11, INPUT_PULLUP);     //D11 multiplexer input
+  pinMode(43, INPUT_PULLUP);     //D43 multiplexer input
+  pinMode(44, INPUT_PULLUP);     //D44 multiplexer input
   tft.begin();                   // initializes communication LCD screen
   tft.setRotation(3);            // Sets orientation of display [1: 0 degrees] [2: 90 degrees] [3: 180 degrees] [4: 270 degrees]
   tft.fillScreen(TFT_BLACK);     // Clear screen
@@ -407,14 +402,14 @@ void setup() {
   }
   if (!ads.begin()) {
     while (1) {
-      Serial.println("Failed to initialize ADS.");
+      Serial1.println("Failed to initialize ADS.");
       vTaskDelay(3000 / portTICK_PERIOD_MS);
     }
   }
   ads.setGain(GAIN_TWO);  // 2x gain   +/- 2.048V  1 bit = 1mV | // 4x gain   +/- 1.024V  1 bit = 0.5mV
 
-    //turn on hardware filter
-    ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);  // puts ADC into continous mode hardware filter
+  //turn on hardware filter
+  ads.startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/true);  // puts ADC into continous mode hardware filter
   // Set up the GPIO pin for the external interrupt
   reconfigure();
   attachInterrupt(digitalPinToInterrupt(10), CONFIG_INTERRUPT, CHANGE);
@@ -433,26 +428,35 @@ void setup() {
 
 
   vTaskDelay(500 / portTICK_PERIOD_MS);
-  Serial.println("ADC Range: +/- 2.048V  1 bit = 1mV");
+  Serial1.println("ADC Range: +/- 2.048V  1 bit = 1mV");
   ads.begin();
-  Serial.println("C1.104");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
-
+  Serial1.println("C1.104");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
+  // Flashes Logo to Screen and prints version number on startup
   tft.setTextDatum(MC_DATUM);
   int16_t rc = png.openFLASH((uint8_t *)Artboard_1, sizeof(Artboard_1), pngDraw);
   if (rc == PNG_SUCCESS) {
     tft.startWrite();
     uint32_t dt = millis();
     rc = png.decode(NULL, 0);
-    Serial.print(millis() - dt);
-    Serial.println("ms");
+    Serial1.print(millis() - dt);
+    Serial1.println("ms");
     tft.endWrite();
   }
-  tft.setTextColor(TFT_RED);
-  tft.setFreeFont(&FreeMonoBold12pt7b);  // Select the font
   tft.setTextDatum(BR_DATUM);            //Adjusts reference point of text generation
   tft.drawString("C1.104", 320, 170);    // Print the version number in the bottom right
-  vTaskDelay(1000 / portTICK_PERIOD_MS);
-  bin_sem = xSemaphoreCreateBinary();
+  delay(2000);
+
+  tft.fillScreen(TFT_BLACK);     // Clear screen
+  // Prints 0000 on startup 
+  tft.setTextColor(TFT_RED);                       //Sets color of text to red
+  tft.setFreeFont(AMPFONT70);                           // Selects the font
+  tft.setTextDatum(TC_DATUM);                      // Adjusts reference point of text generation to top center
+  tft.drawString("0000", ampX, ampY);        // Print the test text in the custom font
+  tft.setTextColor(TFT_RED);
+  tft.setFreeFont(&FreeMonoBold12pt7b);  // Select the font
+  delay (1000);
+
+  bin_sem = xSemaphoreCreateBinary(); //create semaphore
 
   // Start Task 0 (in Core 0)
   xTaskCreatePinnedToCore(doTask0,
@@ -472,7 +476,7 @@ void setup() {
                           NULL,
                           app_cpu);
 
-  Serial.println("Set up completed successfully");
+  Serial1.println("Set up completed successfully");
 
   vTaskDelay(10000 / portTICK_PERIOD_MS);
   // Delete "setup and loop" task
@@ -520,7 +524,7 @@ void time_display(const GFXfont *font) {
 
   tft.setTextColor(TFT_WHITE);                                // Sets color of text to white
   tft.setFreeFont(font);                                      // Selects the font
-  tft.setTextDatum(BR_DATUM);                                 //Adjusts reference point of text generation to bottom right
+  tft.setTextDatum(BC_DATUM);                                 //Adjusts reference point of text generation to bottom right
   sprintf(task1_string, "%.2f%s", wave.timerDisplay(), "s");  // stores corrected time value into string to be printed to LCD
 
   //Check that corrected time is above 0 seconds. If time negative then print N/A instead
