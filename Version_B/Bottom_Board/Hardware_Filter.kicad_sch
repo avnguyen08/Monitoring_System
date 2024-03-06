@@ -5,9 +5,13 @@
 	(uuid "d69773cb-3281-4d6c-89b4-d7f084537a7c")
 	(paper "A4")
 	(title_block
-		(title "Current Monitoring System")
-		(date "2024-02-23")
+		(title "Current Monitoring System (Bottom Board)")
+		(date "2024-03-05")
 		(rev "C1.04")
+		(company "Secured Solutions Group")
+		(comment 1 "David Nguyen")
+		(comment 2 "david@securedsolutionsgroup.com")
+		(comment 3 "(909)-896-1654")
 	)
 	(lib_symbols
 		(symbol "Amplifier_Operational:LM324"
