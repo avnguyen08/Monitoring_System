@@ -154,7 +154,7 @@ public:
       debugln("Circle Off");
       tft.fillCircle(25, 145, 20, TFT_BLACK);
       tft.setTextColor(TFT_RED);                 //Sets color of text to red
-      tft.setFreeFont(AMPFONT);                  // Selects the font
+      tft.setFreeFont(AMPFONT70);                  // Selects the font
       tft.setTextDatum(TC_DATUM);                // Adjusts reference point of text generation to top center
       strcpy(task1_string, "0000");              // stores peak amp value into string to be printed to LCD
       tft.drawString(task1_string, ampX, ampY);  // Print the test text in the custom font
@@ -162,7 +162,8 @@ public:
       tft.setTextColor(TFT_WHITE);               //Sets color of text to red
       tft.setFreeFont(MYFONT25);                 // Selects the font
       tft.setTextDatum(BR_DATUM);                // Adjusts reference point of text generation to top center
-      strcpy(task1_string, "AMPx10");            // stores peak amp value into string to be printed to LCD
+   memset(task1_string, '\0', sizeof(task1_string));
+      strcpy(task1_string, "AMPx1000");            // stores peak amp value into string to be printed to LCD
       tft.drawString(task1_string, ampX, ampY);  // Print the test text in the custom font
       return;
     }
@@ -258,7 +259,7 @@ public:
 
   /* returns the peak amps for the waveform depending on what shunt is attached */
   float set_amp_peak() {
-    ampPeak = shunt_multiplier * volt_peak();
+    ampPeak = shunt_multiplier * volt_peak()/1000;
     return ampPeak;
   }
 
@@ -349,7 +350,8 @@ void doTask1(void *parameters) {
       tft.setTextColor(TFT_RED);                 //Sets color of text to red
       tft.setFreeFont(MYFONT25);                 // Selects the font
       tft.setTextDatum(BR_DATUM);                // Adjusts reference point of text generation to top center
-      strcpy(task1_string, "AMPx10");            // stores peak amp value into string to be printed to LCD
+   memset(task1_string, '\0', sizeof(task1_string));
+      strcpy(task1_string, "AMPx1000");            // stores peak amp value into string to be printed to LCD
       tft.drawString(task1_string, ampX, ampY);  // Print the test text in the custom font
       xSemaphoreGive(mutex);                     // give away mutex
     }
@@ -418,7 +420,7 @@ void setup() {
   vTaskDelay(500 / portTICK_PERIOD_MS);
   Serial1.println("ADC Range: +/- 2.048V  1 bit = 1mV");
   ads.begin();
-  Serial1.println("C1.104");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
+  Serial1.println("C1.105");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
   // Flashes Logo to Screen and prints version number on startup
   tft.setTextDatum(MC_DATUM);
   int16_t rc = png.openFLASH((uint8_t *)Artboard_1, sizeof(Artboard_1), pngDraw);
@@ -431,7 +433,7 @@ void setup() {
     tft.endWrite();
   }
   tft.setTextDatum(BL_DATUM);        //Adjusts reference point of text generation
-  tft.drawString("C1.104", 0, 170);  // Print the version number in the bottom right
+  tft.drawString("C1.105", 0, 170);  // Print the version number in the bottom right
 
   tft.setTextColor(TFT_WHITE);                               //Sets color of text to red
   tft.setFreeFont(MYFONT25);                                 // Selects the font
@@ -451,7 +453,8 @@ void setup() {
   tft.setTextColor(TFT_WHITE);               //Sets color of text to red
   // tft.setFreeFont(MYFONT25);                 // Selects the font
   tft.setTextDatum(BR_DATUM);                // Adjusts reference point of text generation to top center
-  sprintf(task1_string, "AMPx10");            // stores peak amp value into string to be printed to LCD
+   memset(task1_string, '\0', sizeof(task1_string));
+      strcpy(task1_string, "AMPx1000");            // stores peak amp value into string to be printed to LCD
   tft.drawString(task1_string, 320, 170);  // Print the test text in the custom font
   delay(500);
 
@@ -514,7 +517,7 @@ void amp_display(const GFXfont *font) {
   tft.setTextColor(TFT_RED);                       //Sets color of text to red
   tft.setFreeFont(font);                           // Selects the font
   tft.setTextDatum(TC_DATUM);                      // Adjusts reference point of text generation to top center
-  sprintf(task1_string, "%.0f", wave.amp_peak());  // stores peak amp value into string to be printed to LCD
+  sprintf(task1_string, "%.2f", wave.amp_peak());  // stores peak amp value into string to be printed to LCD
   tft.drawString(task1_string, ampX, ampY);        // Print the test text in the custom font
 }
 
@@ -552,17 +555,17 @@ void reconfigure() {
   mtp[1] = digitalRead(43);
   mtp[2] = digitalRead(11);
   mtp[3] = digitalRead(10);
-  if (mtp[1] == 1 && mtp[1] == 1) {
-    wave.shunt_multiplier = 1;  //D44 Off, D43 Off
-  } else if (mtp[1] == 1 && mtp[0] == 0) {
-    wave.shunt_multiplier = 2;  // D44 Off, D43 On
+  if (mtp[0] == 1 && mtp[1] == 1) {
+    wave.shunt_multiplier = 10;  //D44 Off, D43 Off
+  } else if (mtp[0] == 1 && mtp[1] == 0) {
+    wave.shunt_multiplier = 20;  // D44 Off, D43 On
   } else if (mtp[0] == 0 && mtp[1] == 1) {
-    wave.shunt_multiplier = 4;  //D44 On, D43 Off
+    wave.shunt_multiplier = 40;  //D44 On, D43 Off
 
   } else if (mtp[0] == 0 && mtp[0] == 0) {
-    wave.shunt_multiplier = 4;  //D44 On, D43 On
+    wave.shunt_multiplier = 40;  //D44 On, D43 On
   } else {
-    wave.shunt_multiplier = 1;  //D44 On, D43 On
+    wave.shunt_multiplier = 50;  //D44 On, D43 On
   }
   hardware_filter = 1;  // make hardware filter reading always active
 }
