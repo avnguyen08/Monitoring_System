@@ -1718,7 +1718,7 @@
 	)
 	(wire
 		(pts
-			(xy 200.025 50.8) (xy 170.815 50.8)
+			(xy 196.85 50.8) (xy 170.815 50.8)
 		)
 		(stroke
 			(width 0)
@@ -1805,16 +1805,6 @@
 			(type default)
 		)
 		(uuid "1ed6ebec-180b-42cf-8491-e8b1a9192bce")
-	)
-	(wire
-		(pts
-			(xy 208.28 50.8) (xy 207.645 50.8)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "204aba53-0bc0-44d4-a7c3-30d3e7dcc530")
 	)
 	(wire
 		(pts
@@ -2215,6 +2205,16 @@
 			(type default)
 		)
 		(uuid "74d78c27-b3a4-4c7c-98b6-00856e0e747c")
+	)
+	(wire
+		(pts
+			(xy 204.47 50.8) (xy 208.28 50.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "74fcb806-2117-4517-a29e-e3683caf1b8f")
 	)
 	(wire
 		(pts
@@ -6869,7 +6869,7 @@
 	)
 	(symbol
 		(lib_id "Device:R_US")
-		(at 203.835 50.8 270)
+		(at 200.66 50.8 270)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6878,7 +6878,7 @@
 		(fields_autoplaced yes)
 		(uuid "cf7b332a-3ced-451b-9229-f23bfd64f418")
 		(property "Reference" "R17"
-			(at 203.835 45.72 90)
+			(at 200.66 45.72 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6886,7 +6886,7 @@
 			)
 		)
 		(property "Value" "80.6K"
-			(at 203.835 48.26 90)
+			(at 200.66 48.26 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6894,7 +6894,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 203.581 51.816 90)
+			(at 200.406 51.816 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6903,7 +6903,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 203.835 50.8 0)
+			(at 200.66 50.8 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6912,7 +6912,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 203.835 50.8 0)
+			(at 200.66 50.8 0)
 			(effects
 				(font
 					(size 1.27 1.27)

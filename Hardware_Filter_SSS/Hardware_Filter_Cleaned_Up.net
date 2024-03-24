@@ -1,0 +1,55 @@
+* C:\Users\aaron\OneDrive\Desktop\repos\Monitoring_System\Hardware_Filter_SSS\Hardware_Filter_Cleaned_Up.asc
+V1 5V 0 5V
+V2 -5V 0 -5V
+R1 E23 0 30.1k
+R4 N001 0 25.5k
+R2 N006 E23 20k
+R5 N001 P001 187k
+C11 N001 N006 .002µF
+R3 N002 N001 110k
+R9 N004 N002 10k
+R10 N004 N012 1Meg
+R6 5V N013 22k
+R8 -5V N014 22k
+XU7 N013 N014 N012 potentiometer Rtot=20K wiper=.5
+R11 N009 0 4.7k
+C1 P001 0 0.1µF
+R12 N005 N004 10k
+R13 N010 T/P-1 80.6k
+C2 N003 N010 0.1µF
+R14 N011 N010 80.6k
+R16 0 N008 10k
+R15 N008 N003 1.82k
+C7 N011 0 0.1µF
+R17 N008 N015 80.6k
+C3 T/P-2 N015 0.1µF
+R25 T/P-2 4x 16.2k
+R26 4x 2x 10k
+R27 2x 0 10k
+R24 N016 0 10k
+R23 N016 N019 1Meg
+XU21 N018 N020 N019 potentiometer Rtot=20K wiper=.3675
+R20 5V N018 4.7k
+R22 N020 -5V 10k
+R18 N017 N015 80.6k
+C4 N017 0 0.1µF
+D1 N007 N005 1N914
+V3 E23 0 0 AC 1
+XU1 N006 N001 5V -5V N002 level3a Avol=1Meg GBW=10Meg Slew=10Meg Ilimit=25m Rail=0 Vos=0 Phimargin=45 En=0 Enk=0 In=0 Ink=0 Rin=500Meg
+XU2 N009 N004 5V -5V N007 level3a Avol=1Meg GBW=10Meg Slew=10Meg Ilimit=25m Rail=0 Vos=0 Phimargin=45 En=0 Enk=0 In=0 Ink=0 Rin=500Meg
+XU3 N005 T/P-1 5V -5V T/P-1 level3a Avol=1Meg GBW=10Meg Slew=10Meg Ilimit=25m Rail=0 Vos=0 Phimargin=45 En=0 Enk=0 In=0 Ink=0 Rin=500Meg
+XU4 N011 N008 5V -5V N003 level3a Avol=1Meg GBW=10Meg Slew=10Meg Ilimit=25m Rail=0 Vos=0 Phimargin=45 En=0 Enk=0 In=0 Ink=0 Rin=500Meg
+XU5 N017 N016 5V -5V T/P-2 level3a Avol=1Meg GBW=10Meg Slew=10Meg Ilimit=25m Rail=0 Vos=0 Phimargin=45 En=0 Enk=0 In=0 Ink=0 Rin=500Meg
+R19 T/P-2 N016 3.65k
+.model D D
+.lib C:\Users\aaron\AppData\Local\LTspice\lib\cmp\standard.dio
+.SUBCKT potentiometer 1 2 3
+.param w=limit(wiper,1m,.999)
+R0 1 3 {Rtot*(1-w)}
+R1 3 2 {Rtot*(w)}
+.ENDS
+* (AC Only)
+.ac dec 1000 1 100
+.lib UniversalOpAmp3a.lib
+.backanno
+.end

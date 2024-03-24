@@ -1,4 +1,4 @@
-Circuit: * C:\Users\John\Desktop\Monitoring_System\Hardware_Filter_SSS\Hardware_Filter_Simulation.asc
+Circuit: * C:\Users\aaron\OneDrive\Desktop\repos\Monitoring_System\Hardware_Filter_SSS\Hardware_Filter_Simulation.asc
 
 Direct Newton iteration failed to find .op point.  (Use ".option noopiter" to skip.)
 Starting Gmin stepping
@@ -20,37 +20,39 @@ Gmin = 2.70769e-13
 Gmin = 0
 Gmin stepping succeeded in finding the operating point.
 
-Heightened Def Con from 0.0165966 to 0.0165966
-Heightened Def Con from 0.033233 to 0.033233
-Heightened Def Con from 0.033327 to 0.033327
-Heightened Def Con from 0.0499058 to 0.0499058
-Heightened Def Con from 0.0664783 to 0.0664783
-Heightened Def Con from 0.0666591 to 0.0666591
-Heightened Def Con from 0.0832099 to 0.0832099
-Heightened Def Con from 0.0997876 to 0.0997876
-Heightened Def Con from 0.116496 to 0.116496
-Heightened Def Con from 0.133229 to 0.133229
-Heightened Def Con from 0.133326 to 0.133326
-Heightened Def Con from 0.149798 to 0.149798
-Heightened Def Con from 0.183207 to 0.183207
-Heightened Def Con from 0.183325 to 0.183325
-Heightened Def Con from 0.199846 to 0.199846
+Heightened Def Con from 0.0165838 to 0.0165838
+Heightened Def Con from 0.0332762 to 0.0332762
+Heightened Def Con from 0.0498441 to 0.0498441
+Heightened Def Con from 0.0665064 to 0.0665064
+Heightened Def Con from 0.0666704 to 0.0666705
+Heightened Def Con from 0.0666725 to 0.0666725
+Heightened Def Con from 0.0832509 to 0.0832509
+Heightened Def Con from 0.0999167 to 0.0999167
+Heightened Def Con from 0.108312 to 0.108312
+Heightened Def Con from 0.116544 to 0.116544
+Heightened Def Con from 0.1332 to 0.1332
+Heightened Def Con from 0.133335 to 0.133335
+Heightened Def Con from 0.149846 to 0.149846
+Heightened Def Con from 0.166595 to 0.166595
+Heightened Def Con from 0.17497 to 0.17497
+Heightened Def Con from 0.183185 to 0.183185
+Heightened Def Con from 0.199828 to 0.199828
 
-Date: Tue Mar 19 17:34:25 2024
-Total elapsed time: 0.230 seconds.
+Date: Sat Mar 23 01:45:56 2024
+Total elapsed time: 0.380 seconds.
 
 tnom = 27
 temp = 27
 method = modified trap
-totiter = 15097
-traniter = 14747
-tranpoints = 4277
-accept = 3246
-rejected = 1046
-matrix size = 42
-fillins = 33
+totiter = 25317
+traniter = 24967
+tranpoints = 9535
+accept = 6756
+rejected = 2796
+matrix size = 41
+fillins = 35
 solver = Normal
-Avg thread counts: 1.3/2.0/2.1/1.3
-Matrix Compiler1: 3.60 KB object code size  1.0/0.6/[0.3]
-Matrix Compiler2: 4.92 KB object code size  0.6/0.6/[0.4]
+Avg thread counts: 1.1/1.2/1.2/1.1
+Matrix Compiler1: 3.67 KB object code size  2.0/0.9/[0.6]
+Matrix Compiler2: 4.88 KB object code size  0.5/0.5/[0.2]
 

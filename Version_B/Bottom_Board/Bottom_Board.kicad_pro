@@ -467,7 +467,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "../../../../../../../../Program Files/KiCad/8.0/",
-      "plot": "",
+      "plot": "Manufacture/Gerber",
       "pos_files": "jlpcbPnP",
       "specctra_dsn": "",
       "step": "Bottom_Board.step",
