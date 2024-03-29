@@ -20,39 +20,39 @@ Gmin = 2.70769e-13
 Gmin = 0
 Gmin stepping succeeded in finding the operating point.
 
-Heightened Def Con from 0.0165838 to 0.0165838
-Heightened Def Con from 0.0332762 to 0.0332762
-Heightened Def Con from 0.0498441 to 0.0498441
-Heightened Def Con from 0.0665064 to 0.0665064
-Heightened Def Con from 0.0666704 to 0.0666705
-Heightened Def Con from 0.0666725 to 0.0666725
-Heightened Def Con from 0.0832509 to 0.0832509
-Heightened Def Con from 0.0999167 to 0.0999167
-Heightened Def Con from 0.108312 to 0.108312
-Heightened Def Con from 0.116544 to 0.116544
-Heightened Def Con from 0.1332 to 0.1332
-Heightened Def Con from 0.133335 to 0.133335
-Heightened Def Con from 0.149846 to 0.149846
-Heightened Def Con from 0.166595 to 0.166595
-Heightened Def Con from 0.17497 to 0.17497
-Heightened Def Con from 0.183185 to 0.183185
-Heightened Def Con from 0.199828 to 0.199828
+Heightened Def Con from 0.00826893 to 0.00826893
+Heightened Def Con from 0.0165314 to 0.0165314
+Heightened Def Con from 0.0331999 to 0.0331999
+Heightened Def Con from 0.0498888 to 0.0498888
+Heightened Def Con from 0.0665706 to 0.0665706
+Heightened Def Con from 0.0832374 to 0.0832374
+Heightened Def Con from 0.0998657 to 0.0998657
+Heightened Def Con from 0.116563 to 0.116563
+Heightened Def Con from 0.124959 to 0.124959
+Heightened Def Con from 0.133168 to 0.133168
+Heightened Def Con from 0.133314 to 0.133314
+Heightened Def Con from 0.149894 to 0.149894
+Heightened Def Con from 0.166544 to 0.166544
+Heightened Def Con from 0.183149 to 0.183149
+Heightened Def Con from 0.183253 to 0.183253
+Heightened Def Con from 0.199777 to 0.199777
+Heightened Def Con from 0.199929 to 0.199929
 
-Date: Sat Mar 23 01:45:56 2024
-Total elapsed time: 0.380 seconds.
+Date: Thu Mar 28 17:17:07 2024
+Total elapsed time: 0.320 seconds.
 
 tnom = 27
 temp = 27
 method = modified trap
-totiter = 25317
-traniter = 24967
-tranpoints = 9535
-accept = 6756
-rejected = 2796
-matrix size = 41
-fillins = 35
+totiter = 16972
+traniter = 16622
+tranpoints = 4776
+accept = 3613
+rejected = 1180
+matrix size = 42
+fillins = 33
 solver = Normal
-Avg thread counts: 1.1/1.2/1.2/1.1
-Matrix Compiler1: 3.67 KB object code size  2.0/0.9/[0.6]
-Matrix Compiler2: 4.88 KB object code size  0.5/0.5/[0.2]
+Avg thread counts: 1.1/1.5/1.5/1.1
+Matrix Compiler1: 3.60 KB object code size  2.0/0.9/[0.7]
+Matrix Compiler2: 4.92 KB object code size  0.4/0.4/[0.3]
 
