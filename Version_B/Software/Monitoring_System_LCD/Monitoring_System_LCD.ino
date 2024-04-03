@@ -73,7 +73,7 @@ int16_t ypos = 0;  // y-coordinate of logo
 // FREERTOS Mutex
 SemaphoreHandle_t mutex;
 
-Adafruit_ADS1015 ads;
+Adafruit_ADS1115 ads;
 char task0_string[50];               //string to hold display data, essential for serial and lcd
 char task1_string[50];               //string to hold display data, essential for serial and lcd
 const int WAVEFORM_MAX_SIZE = 2890;  // amount of samples stored. Number chosen for 1 seconds worth of samples. Sampling rate: 1450 samples/sec
@@ -119,12 +119,11 @@ public:
   bool waveform_exist() {
 
     esp_task_wdt_reset();
-    int reading = ads.getLastConversionResults();
+    float reading = ads.getLastConversionResults();
     sensBuffer.push(ads.computeVolts(reading)/2);  // polling for sensor values to see when there is actually significant voltage (voltage above the threshold value). Changing V to mV
-      // debug("SensorValue: ");
-      debugln(ads.computeVolts(reading)/2);
+      debug("SensorValue: ");
+      debugln(ads.computeVolts(reading)/2)*1000;
       // debug("Raw Reading: ");
-      debugln(reading);
     // checks if last two values are from a valid waveform
     for (int i = SENS_SIZE - 2; i < SENS_SIZE; ++i) {
       if (abs(sensBuffer[i]) <= enter_sens) {
@@ -144,11 +143,11 @@ public:
     startTime = millis();  //marks the beginning time of the waveform
       // if newest ADC readings below a certain sensitivity then end capture
     while (!(waveform_ended())) {
-      int my_reading = ads.getLastConversionResults();
+      float my_reading = ads.getLastConversionResults();
       sensorVal = ads.computeVolts(my_reading)/2;  // polling for sensor values to see when there is actually significant voltage (voltage above the threshold value)
       sample_count++;
       debug("SensorValue: ");
-      debugln(sensorVal);
+      debugln(sensorVal*1000);
       Waveform.push(sensorVal);
       sensBuffer.push(sensorVal);
     }
