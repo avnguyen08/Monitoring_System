@@ -36,6 +36,7 @@ empty for other platforms. Be careful - other platforms may have
 
 //3 seconds WDT
 #define WDT_TIMEOUT 10
+// #define WDT_TIMEOUT_SAMP 600
 
 #define I2C_SDA 12           // I2C Data pin for ADC
 #define I2C_SCL 13           // I2C Clock pin for ADC
@@ -418,7 +419,7 @@ void setup() {
   vTaskDelay(500 / portTICK_PERIOD_MS);
   Serial1.println("ADC Range: +/- 4.096V  1 bit = .125mV");
   ads.begin();
-  Serial1.println("C1.106");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
+  Serial1.println("C1.108");  //Version number. 1st digit DC or AC (1 DC, 2 AC). 2nd digit hardware version updates. 3rd and 4th are for software version updates
   // Flashes Logo to Screen and prints version number on startup
   tft.setTextDatum(MC_DATUM);
   int16_t rc = png.openFLASH((uint8_t *)Artboard_1, sizeof(Artboard_1), pngDraw);
@@ -431,7 +432,7 @@ void setup() {
     tft.endWrite();
   }
   tft.setTextDatum(BL_DATUM);        //Adjusts reference point of text generation
-  tft.drawString("C1.106", 0, 170);  // Print the version number in the bottom right
+  tft.drawString("C1.108", 0, 170);  // Print the version number in the bottom right
 
   tft.setTextColor(TFT_WHITE);                               //Sets color of text to red
   tft.setFreeFont(MYFONT25);                                 // Selects the font
