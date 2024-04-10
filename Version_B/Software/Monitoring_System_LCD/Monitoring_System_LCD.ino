@@ -34,8 +34,8 @@ empty for other platforms. Be careful - other platforms may have
 #define IRAM_ATTR
 #endif
 
-//3 seconds WDT
-#define WDT_TIMEOUT 10
+//35 seconds WDT
+#define WDT_TIMEOUT 35
 // #define WDT_TIMEOUT_SAMP 600
 
 #define I2C_SDA 12           // I2C Data pin for ADC
