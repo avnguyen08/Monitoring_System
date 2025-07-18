@@ -1,5 +1,4 @@
 (fp_lib_table
   (version 7)
   (lib (name "Voltage_Sensor_Timer")(type "KiCad")(uri "${KIPRJMOD}/Top_Board.pretty")(options "")(descr ""))
-  (lib (name "top_lib")(type "KiCad")(uri "${KIPRJMOD}/top_lib.pretty")(options "")(descr ""))
 )

@@ -1,0 +1,30 @@
+Comment,Designator,Footprint
+LM324DR,"U1,U2",Package_SO:SOIC-14_3.9x8.7mm_P1.27mm
+ADS1015IDGSR,U3,bot_lib:DGS0010A_N
+.75 Vdc,TP2,TestPoint:TestPoint_Loop_D2.54mm_Drill1.5mm_Beaded
+.55 Vdc,TP1,TestPoint:TestPoint_Loop_D2.54mm_Drill1.5mm_Beaded
+SW_DIP_x04,SW1,Button_Switch_THT:SW_DIP_SPSTx04_Slide_9.78x12.34mm_W7.62mm_P2.54mm
+20K POT,"RV1,RV2",bot_lib:Potentiometer_Bourns_3386P_Vertical
+22K,"R8,R18",Resistor_SMD:R_0603_1608Metric
+4.7K,"R6,R9",Resistor_SMD:R_0603_1608Metric
+80.6K,"R5,R7,R16,R20",Resistor_SMD:R_0603_1608Metric
+10K,"R3,R12,R13,R17,R19,R21,R23,R26,R27,R28,R29",Resistor_SMD:R_0603_1608Metric
+1M,"R14,R22",Resistor_SMD:R_0603_1608Metric
+20k,R10B1,Resistor_SMD:R_0603_1608Metric
+20K,"R10A1,R11",Resistor_SMD:R_0603_1608Metric
+3.9M,R30,Resistor_SMD:R_0603_1608Metric
+3.65K,R25,Resistor_SMD:R_0603_1608Metric
+16.2K,R24,Resistor_SMD:R_0603_1608Metric
+110K,R15,Resistor_SMD:R_0603_1608Metric
+1.82K,R4,Resistor_SMD:R_0603_1608Metric
+25.5K,R2,Resistor_SMD:R_0603_1608Metric
+187K,R1,Resistor_SMD:R_0603_1608Metric
+Conn_02x03_Top_Bottom,"J1,J5",bot_lib:PinSocket_2x03_P2.54mm_Vertical
+DIN-5,J4,bot_lib:DIN_5_PIN
+Screw_Terminal_01x04,J3,bot_lib:Terminal_Strip_4_Pin
+Conn_01x03_Pin,J2,Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical
+1N4148WS,D1,bot_lib:Diode_1N4148WS
+0.1uF,"C3,C4,C5,C7,C8,C10,C11",Capacitor_SMD:C_0603_1608Metric
+330uF,"C1,C2",Capacitor_THT:CP_Radial_D10.0mm_P5.00mm
+1uF,C9,Capacitor_SMD:C_0603_1608Metric
+0.002uF,C6,Capacitor_SMD:C_0603_1608Metric
