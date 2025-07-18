@@ -1,4 +1,4 @@
-21492520577012703
+21468367400754302
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -34027,7 +34027,7 @@ Through hole angled pin header THT 1x05 2.54mm single row
 5
 5
 Connector_PinHeader_2.54mm
-PinHeader_1x05_P2.54mm_Vertical_1
+PinHeader_1x05_P2.54mm_Vertical
 Through hole straight pin header, 1x05, 2.54mm pitch, single row
 Through hole pin header THT 1x05 2.54mm single row
 0
@@ -40627,13 +40627,6 @@ Surface mounted socket strip SMD 2x40 2.00mm double row
 0
 80
 80
-Connector_PinSocket_2.54mm
-HC-05
-
-
-0
-6
-6
 Connector_PinSocket_2.54mm
 PinSocket_1x01_P2.54mm_Horizontal
 Through hole angled socket strip, 1x01, 2.54mm pitch, 8.51mm socket length, single row (from Kicad 4.0.7), script generated
@@ -89662,94 +89655,3 @@ T-Display-S3
 0
 24
 24
-Voltage_Sensor_Timer
-my_logo
-
-
-0
-0
-0
-top_lib
-ADS and PinSocket
-Through hole straight socket strip, 1x10, 2.54mm pitch, single row (from Kicad 4.0.7), script generated
-Through hole socket strip THT 1x10 2.54mm single row
-0
-10
-10
-top_lib
-ADS1015
-
-
-0
-10
-10
-top_lib
-Adafruit_Feather
-Common footprint for the Adafruit Feather series of boards, https://learn.adafruit.com/adafruit-feather/feather-specification
-Adafruit Feather
-0
-28
-28
-top_lib
-Combined Sockets_1x16_1x12
-
-
-0
-28
-28
-top_lib
-PinSocket_1x12_P2.54mm_Vertical_1
-Through hole straight socket strip, 1x12, 2.54mm pitch, single row (from Kicad 4.0.7), script generated
-Through hole socket strip THT 1x12 2.54mm single row
-0
-12
-12
-top_lib
-PinSocket_1x12_P2.54mm_Vertical_1_1
-Through hole straight socket strip, 1x12, 2.54mm pitch, single row (from Kicad 4.0.7), script generated
-Through hole socket strip THT 1x12 2.54mm single row
-0
-12
-12
-top_lib
-PinSocket_1x16_P2.54mm_Vertical
-Through hole straight socket strip, 1x16, 2.54mm pitch, single row (from Kicad 4.0.7), script generated
-Through hole socket strip THT 1x16 2.54mm single row
-0
-16
-16
-top_lib
-SSS_Potentiometer
-
-
-0
-3
-3
-top_lib
-SSS_PotentiometerV2
-
-
-0
-3
-3
-top_lib
-SSS_PotentiometerV3
-
-
-0
-3
-3
-top_lib
-T-Display-S3
-
-
-0
-24
-24
-top_lib
-my_logo
-
-
-0
-0
-0
